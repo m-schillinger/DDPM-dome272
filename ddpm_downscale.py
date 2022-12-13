@@ -104,16 +104,16 @@ def train(args):
             # labels = torch.arange(10).long().to(device)
             # generate some random low-res images
             random_file=random.choice(os.listdir(args.dataset_path_lr))
-            path =  os.path.join(args.dataset_path_lr, random_file) 
+            path =  os.path.join(args.dataset_path_lr, random_file)
             images_lr = read_image(path, mode = ImageReadMode(3)).unsqueeze(0)
             for i in range(9):
                 random_file=random.choice(os.listdir(args.dataset_path_lr))
                 path =  os.path.join(args.dataset_path_lr, random_file)
                 random_img = read_image(path, mode = ImageReadMode(3)).unsqueeze(0)
                 images_lr = torch.cat([images_lr, random_img], dim=0)
-                
+
             sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr)
-            ema_sampled_images = diffusion.sample(ema_model, n=len(images_lr), labels=images_lr)
+            ema_sampled_images = diffusion.sample(ema_model, n=len(images_lr), images_lr=images_lr)
             plot_images(sampled_images)
             save_images(sampled_images, os.path.join("results", args.run_name, f"{epoch}.jpg"))
             save_images(ema_sampled_images, os.path.join("results", args.run_name, f"{epoch}_ema.jpg"))
