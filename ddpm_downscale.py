@@ -6,7 +6,7 @@ import torch.nn as nn
 from tqdm import tqdm
 from torch import optim
 from utils import *
-from modules import UNet_conditional, EMA
+from modules import *
 import logging
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.io import read_image
@@ -70,7 +70,7 @@ def train(args):
     setup_logging(args.run_name)
     device = args.device
     dataloader = get_data(args)
-    model = UNet_downscale(interp_model=args.interp_mode).to(device)
+    model = UNet_downscale(interp_mode=args.interp_mode, device=device).to(device)
     optimizer = optim.AdamW(model.parameters(), lr=args.lr)
     mse = nn.MSELoss()
     diffusion = Diffusion(img_size=args.image_size, device=device)
@@ -87,8 +87,6 @@ def train(args):
             images_lr = images_lr.to(device)
             t = diffusion.sample_timesteps(images_hr.shape[0]).to(device)
             x_t, noise = diffusion.noise_images(images_hr, t)
-            if np.random.random() < 0.1:
-                images_lr = None
             predicted_noise = model(x_t, t, images_lr)
             loss = mse(noise, predicted_noise)
 
@@ -127,12 +125,13 @@ def launch():
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
     args.run_name = "DDPM_downscale"
-    args.epochs = 300
-    args.batch_size = 14
+    args.epochs = 1
+    args.batch_size = 2
     args.image_size = 64
-    args.dataset_path_hr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch/HR"
-    args.dataset_path_lr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch/LR"
-    args.device = "cuda"
+    args.interp_mode = 'bicubic'
+    args.dataset_path_hr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch_subset/HR"
+    args.dataset_path_lr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch_subset/LR"
+    args.device = "cpu"
     args.lr = 3e-4
     train(args)
 

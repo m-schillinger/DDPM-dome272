@@ -3,3 +3,4 @@ lsf*
 results/*
 checkpoints/*
 checkpoints.zip
+runs/*

@@ -43,9 +43,9 @@ class DownscalingDataset(Dataset):
         hr_path = os.path.join(self.hr_dir, filename)
         lr_path = os.path.join(self.lr_dir, filename)
         # mode ensures RGB values (i.e. only three channels, no alpha channel)
-        image_hr = read_image(hr_path, mode = ImageReadMode(3))
+        image_hr = read_image(hr_path, mode = ImageReadMode(3)).float()
         print(image_hr.type())
-        image_lr = read_image(lr_path, mode = ImageReadMode(3))
+        image_lr = read_image(lr_path, mode = ImageReadMode(3)).float()
         if self.transform_hr:
             image_hr = self.transform_hr(image_hr)
         if self.transform_lr:
