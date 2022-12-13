@@ -1,0 +1,5 @@
+slurm*
+lsf*
+results/*
+checkpoints/*
+checkpoints.zip

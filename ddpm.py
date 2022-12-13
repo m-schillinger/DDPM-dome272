@@ -99,8 +99,8 @@ def launch():
     args.epochs = 500
     args.batch_size = 12
     args.image_size = 64
-    args.dataset_path = r"C:\Users\dome\datasets\landscape_img_folder"
-    args.device = "cuda"
+    args.dataset_path = r"/cluster/home/mschillinger/DL-project/landscapes"
+    args.device = "cpu"
     args.lr = 3e-4
     train(args)
 

@@ -17,6 +17,7 @@ import os
 import pandas as pd
 from torchvision.io.image import ImageReadMode
 from torchvision.io import read_image
+import torch.nn.functional as F
 
 class DownscalingDataset(Dataset):
     def __init__(self, hr_dir, lr_dir, 
@@ -43,7 +44,7 @@ class DownscalingDataset(Dataset):
         lr_path = os.path.join(self.lr_dir, filename)
         # mode ensures RGB values (i.e. only three channels, no alpha channel)
         image_hr = read_image(hr_path, mode = ImageReadMode(3))
-        print(image_hr.shape)
+        print(image_hr.type())
         image_lr = read_image(lr_path, mode = ImageReadMode(3))
         if self.transform_hr:
             image_hr = self.transform_hr(image_hr)
@@ -61,11 +62,16 @@ if __name__ == '__main__':
         train_hr, train_lr = next(it)
         print(f"Train hr shape: {train_hr.size()}")
         print(f"Train lr shape: {train_lr.size()}")
-        img = train_hr[0].squeeze()
-        img = img.permute(1, 2, 0)
-        lr = train_lr[0].squeeze()
-        lr = lr.permute(1, 2, 0)
+        img = train_hr[0].unsqueeze(0).float()
+        lr = train_lr[0].unsqueeze(0).float()
+        y = F.interpolate(lr, size = [64,64], mode = 'bilinear')
+        # y = F.interpolate(lr, size = [64, 64], mode = 'bicubic')
+        img = img.squeeze().permute(1, 2, 0).byte()
+        lr = lr.squeeze().permute(1, 2, 0).byte()
+        y = y.squeeze().permute(1,2,0).byte()
+        plt.imshow(lr)
+        plt.show()
         plt.imshow(img)
         plt.show()
-        plt.imshow(lr)
+        plt.imshow(y)
         plt.show()

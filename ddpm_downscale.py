@@ -85,8 +85,8 @@ def train(args):
         for i, (images_hr, images_lr) in enumerate(pbar):
             images_hr = images_hr.to(device)
             images_lr = images_lr.to(device)
-            t = diffusion.sample_timesteps(images.shape[0]).to(device)
-            x_t, noise = diffusion.noise_images(images, t)
+            t = diffusion.sample_timesteps(images_hr.shape[0]).to(device)
+            x_t, noise = diffusion.noise_images(images_hr, t)
             if np.random.random() < 0.1:
                 images_lr = None
             predicted_noise = model(x_t, t, images_lr)
@@ -130,8 +130,8 @@ def launch():
     args.epochs = 300
     args.batch_size = 14
     args.image_size = 64
-    args.dataset_path_hr = r"/scratch/users/mschillinger/Documents/DL-project/cifar10-32"
-    args.dataset_path_lr = r"/scratch/users/mschillinger/Documents/DL-project/cifar10-32"
+    args.dataset_path_hr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch/HR"
+    args.dataset_path_lr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch/LR"
     args.device = "cuda"
     args.lr = 3e-4
     train(args)

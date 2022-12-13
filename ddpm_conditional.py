@@ -118,7 +118,7 @@ def launch():
     args.batch_size = 14
     args.image_size = 64
     args.num_classes = 10
-    args.dataset_path = r"C:\Users\dome\datasets\cifar10\cifar10-64\train"
+    args.dataset_path = r"/scratch/users/mschillinger/Documents/DL-project/cifar10-32"
     args.device = "cuda"
     args.lr = 3e-4
     train(args)
@@ -135,4 +135,3 @@ if __name__ == '__main__':
     # y = torch.Tensor([6] * n).long().to(device)
     # x = diffusion.sample(model, n, y, cfg_scale=0)
     # plot_images(x)
-
