@@ -3,8 +3,51 @@ import torch
 import torchvision
 from PIL import Image
 from matplotlib import pyplot as plt
-from torch.utils.data import DataLoader
 
+from torch.utils.data import Dataset
+from torch.utils.data import DataLoader
+from torchvision import datasets
+from torchvision.transforms import ToTensor
+import matplotlib.pyplot as plt
+
+import os
+import pandas as pd
+from torchvision.io.image import ImageReadMode
+from torchvision.io import read_image
+import torch.nn.functional as F
+
+class DownscalingDataset(Dataset):
+    def __init__(self, hr_dir, lr_dir,
+                 transform_hr=None, transform_lr=None):
+        self.hr_dir = hr_dir
+        self.lr_dir = lr_dir
+        self.transform_hr = transform_hr
+        self.transform_lr = transform_lr
+        self.max_t = len(os.listdir(self.hr_dir)) * 2
+
+    def __len__(self):
+        return len(os.listdir(self.hr_dir))
+
+    def __getitem__(self, idx):
+        if(idx * 4 > self.max_t):
+            prefix = "va"
+            t = (idx - 1)*4 - self.max_t
+            filename = "{}_{}.png".format(prefix, t)
+        else:
+            prefix = "ua"
+            t = idx * 4
+            filename = "{}_{}.png".format(prefix, t)
+        hr_path = os.path.join(self.hr_dir, filename)
+        lr_path = os.path.join(self.lr_dir, filename)
+        # mode ensures RGB values (i.e. only three channels, no alpha channel)
+        image_hr = read_image(hr_path, mode = ImageReadMode(3))
+        print(image_hr.shape)
+        image_lr = read_image(lr_path, mode = ImageReadMode(3))
+        if self.transform_hr:
+            image_hr = self.transform_hr(image_hr)
+        if self.transform_lr:
+            image_lr = self.transform_hr(image_lr)
+        return image_hr, image_lr
 
 def plot_images(images):
     plt.figure(figsize=(32, 32))
@@ -22,14 +65,8 @@ def save_images(images, path, **kwargs):
 
 
 def get_data(args):
-    transforms = torchvision.transforms.Compose([
-        torchvision.transforms.Resize(80),  # args.image_size + 1/4 *args.image_size
-        torchvision.transforms.RandomResizedCrop(args.image_size, scale=(0.8, 1.0)),
-        torchvision.transforms.ToTensor(),
-        torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-    ])
-    dataset = torchvision.datasets.ImageFolder(args.dataset_path, transform=transforms)
-    dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
+    dataset = DownscalingDataset(args.dataset_path_hr, args.dataset_path_lr)
+    dataloader = DataLoader(dataset, args.batch_size)
     return dataloader
 
 
