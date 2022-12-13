@@ -11,7 +11,7 @@ import logging
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.io import read_image
 from torchvision.io.image import ImageReadMode
-
+import random
 
 logging.basicConfig(format="%(asctime)s - %(levelname)s: %(message)s", level=logging.INFO, datefmt="%I:%M:%S")
 
@@ -49,9 +49,6 @@ class Diffusion:
             for i in tqdm(reversed(range(1, self.noise_steps)), position=0):
                 t = (torch.ones(n) * i).long().to(self.device)
                 predicted_noise = model(x, t, images_lr)
-                if cfg_scale > 0:
-                    uncond_predicted_noise = model(x, t, None)
-                    predicted_noise = torch.lerp(uncond_predicted_noise, predicted_noise, cfg_scale)
                 alpha = self.alpha[t][:, None, None, None]
                 alpha_hat = self.alpha_hat[t][:, None, None, None]
                 beta = self.beta[t][:, None, None, None]
@@ -104,15 +101,17 @@ def train(args):
             random_file=random.choice(os.listdir(args.dataset_path_lr))
             path =  os.path.join(args.dataset_path_lr, random_file)
             images_lr = read_image(path, mode = ImageReadMode(3)).unsqueeze(0)
-            for i in range(9):
+            for i in range(args.n_example_imgs):
                 random_file=random.choice(os.listdir(args.dataset_path_lr))
                 path =  os.path.join(args.dataset_path_lr, random_file)
                 random_img = read_image(path, mode = ImageReadMode(3)).unsqueeze(0)
                 images_lr = torch.cat([images_lr, random_img], dim=0)
-
+            
+            print(images_lr.shape)
             sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr)
             ema_sampled_images = diffusion.sample(ema_model, n=len(images_lr), images_lr=images_lr)
             plot_images(sampled_images)
+            save_images(images_lr, os.path.join("results", args.run_name, f"{epoch}_lowres.jpg"))
             save_images(sampled_images, os.path.join("results", args.run_name, f"{epoch}.jpg"))
             save_images(ema_sampled_images, os.path.join("results", args.run_name, f"{epoch}_ema.jpg"))
             torch.save(model.state_dict(), os.path.join("models", args.run_name, f"ckpt.pt"))
@@ -126,13 +125,14 @@ def launch():
     args = parser.parse_args()
     args.run_name = "DDPM_downscale"
     args.epochs = 1
-    args.batch_size = 2
+    args.batch_size = 1
     args.image_size = 64
     args.interp_mode = 'bicubic'
     args.dataset_path_hr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch_subset/HR"
     args.dataset_path_lr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch_subset/LR"
     args.device = "cpu"
     args.lr = 3e-4
+    args.n_example_imgs = 1
     train(args)
 
 

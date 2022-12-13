@@ -19,11 +19,13 @@ import torch.nn.functional as F
 class DownscalingDataset(Dataset):
     def __init__(self, hr_dir, lr_dir,
                  transform_hr=None, transform_lr=None):
+        print(hr_dir)
         self.hr_dir = hr_dir
         self.lr_dir = lr_dir
         self.transform_hr = transform_hr
         self.transform_lr = transform_lr
-        self.max_t = len(os.listdir(self.hr_dir)) * 2
+        self.max_t = (len(os.listdir(self.hr_dir)) - 2) * 2
+        print(self.max_t)
 
     def __len__(self):
         return len(os.listdir(self.hr_dir))
