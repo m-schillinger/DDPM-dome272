@@ -107,3 +107,40 @@ Traceback (most recent call last):
   File "/cluster/home/mschillinger/DL-project/DDPM-dome272/modules.py", line 296, in forward
     x = torch.cat([x, y], dim = 1)
 RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu! (when checking argument for argument tensors in method wrapper___cat)
+Sender: LSF System <lsfadmin@eu-g3-007>
+Subject: Job 251551003: <dowscale01> in cluster <euler> Exited
+
+Job <dowscale01> was submitted from host <eu-login-15> by user <mschillinger> in cluster <euler> at Wed Dec 14 18:15:36 2022
+Job was executed on host(s) <eu-g3-007>, in queue <gpu.24h>, as user <mschillinger> in cluster <euler> at Wed Dec 14 18:15:50 2022
+</cluster/home/mschillinger> was used as the home directory.
+</cluster/home/mschillinger/DL-project/DDPM-dome272> was used as the working directory.
+Started at Wed Dec 14 18:15:50 2022
+Terminated at Wed Dec 14 18:15:56 2022
+Results reported at Wed Dec 14 18:15:56 2022
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+python ddpm_downscale_euler.py
+------------------------------------------------------------
+
+Exited with exit code 1.
+
+Resource usage summary:
+
+    CPU time :                                   0.18 sec.
+    Max Memory :                                 13 MB
+    Average Memory :                             1.00 MB
+    Total Requested Memory :                     10000.00 MB
+    Delta Memory :                               9987.00 MB
+    Max Swap :                                   -
+    Max Processes :                              1
+    Max Threads :                                1
+    Run time :                                   23 sec.
+    Turnaround time :                            20 sec.
+
+The output (if any) follows:
+
+  File "ddpm_downscale_euler.py", line 38
+SyntaxError: Non-ASCII character '\xc6' in file ddpm_downscale_euler.py on line 38, but no encoding declared; see http://www.python.org/peps/pep-0263.html for details

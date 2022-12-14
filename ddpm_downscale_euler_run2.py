@@ -6,7 +6,7 @@ import torch.nn as nn
 from tqdm import tqdm
 from torch import optim
 from utils import *
-from modules import *
+from modulesrun2 import *
 import logging
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.io import read_image
@@ -39,12 +39,12 @@ class Diffusion:
         alphat = ft / ft[0]
         betat = 1 - alphat[1:] / alphat[:-1]
         return torch.clip(betat, 0.0001, 0.9999)
-        
+
     def noise_images(self, x, t):
         sqrt_alpha_hat = torch.sqrt(self.alpha_hat[t])[:, None, None, None]
         sqrt_one_minus_alpha_hat = torch.sqrt(1 - self.alpha_hat[t])[:, None, None, None]
-        Ɛ = torch.randn_like(x)
-        return sqrt_alpha_hat * x + sqrt_one_minus_alpha_hat * Ɛ, Ɛ
+        eps = torch.randn_like(x)
+        return sqrt_alpha_hat * x + sqrt_one_minus_alpha_hat * eps, eps
 
     def sample_timesteps(self, n):
         return torch.randint(low=1, high=self.noise_steps, size=(n,))
