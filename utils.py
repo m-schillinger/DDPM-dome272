@@ -50,6 +50,32 @@ class DownscalingDataset(Dataset):
             image_lr = self.transform_hr(image_lr)
         return image_hr, image_lr
 
+class DownscalingTemperatureDataset(Dataset):
+    def __init__(self, hr_dir, lr_dir,
+                 transform_hr=None, transform_lr=None):
+        self.hr_dir = hr_dir
+        self.lr_dir = lr_dir
+        self.transform_hr = transform_hr
+        self.transform_lr = transform_lr
+
+    def __len__(self):
+        return len(os.listdir(self.hr_dir))
+
+    def __getitem__(self, idx):
+        filename_hr = "tas_daily_highres_hist-scen_{}.png".format(idx)
+        filename_lr = "tas_daily_lowres_hist-scen_{}.png".format(idx)
+        hr_path = os.path.join(self.hr_dir, filename_hr)
+        lr_path = os.path.join(self.lr_dir, filename_lr)
+        # mode ensures RGB values (i.e. only three channels, no alpha channel)
+        image_hr = read_image(hr_path, mode = ImageReadMode(3)).float()
+        image_lr = read_image(lr_path, mode = ImageReadMode(3)).float()
+        if self.transform_hr:
+            image_hr = self.transform_hr(image_hr)
+        if self.transform_lr:
+            image_lr = self.transform_hr(image_lr)
+        return image_hr, image_lr
+
+
 def plot_images(images):
     plt.figure(figsize=(32, 32))
     plt.imshow(torch.cat([
@@ -66,8 +92,12 @@ def save_images(images, path, **kwargs):
 
 
 def get_data(args):
-    dataset = DownscalingDataset(args.dataset_path_hr, args.dataset_path_lr)
-    dataloader = DataLoader(dataset, args.batch_size)
+    if args.dataset_type == "temperature":
+        dataset = DownscalingTemperatureDataset(args.dataset_path_hr, args.dataset_path_lr)
+        dataloader = DataLoader(dataset, args.batch_size)
+    elif args.dataset_type == "wind":
+        dataset = DownscalingDataset(args.dataset_path_hr, args.dataset_path_lr)
+        dataloader = DataLoader(dataset, args.batch_size)
     return dataloader
 
 

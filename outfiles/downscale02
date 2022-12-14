@@ -1,13 +1,13 @@
-Sender: LSF System <lsfadmin@eu-g2-10>
-Subject: Job 251551059: <dowscale02> in cluster <euler> Exited
+Sender: LSF System <lsfadmin@eu-g2-05>
+Subject: Job 251556584: <dowscale02> in cluster <euler> Exited
 
-Job <dowscale02> was submitted from host <eu-login-15> by user <mschillinger> in cluster <euler> at Wed Dec 14 18:23:28 2022
-Job was executed on host(s) <eu-g2-10>, in queue <gpu.24h>, as user <mschillinger> in cluster <euler> at Wed Dec 14 18:23:48 2022
+Job <dowscale02> was submitted from host <eu-login-12> by user <mschillinger> in cluster <euler> at Wed Dec 14 21:14:43 2022
+Job was executed on host(s) <eu-g2-05>, in queue <gpu.24h>, as user <mschillinger> in cluster <euler> at Wed Dec 14 21:14:58 2022
 </cluster/home/mschillinger> was used as the home directory.
-</cluster/home/mschillinger/DL-project/DDPM-dome272> was used as the working directory.
-Started at Wed Dec 14 18:23:48 2022
-Terminated at Wed Dec 14 18:23:51 2022
-Results reported at Wed Dec 14 18:23:51 2022
+</cluster/home/mschillinger> was used as the working directory.
+Started at Wed Dec 14 21:14:58 2022
+Terminated at Wed Dec 14 21:15:00 2022
+Results reported at Wed Dec 14 21:15:00 2022
 
 Your job looked like:
 
@@ -16,7 +16,7 @@ Your job looked like:
 python ddpm_downscale_euler_run2.py
 ------------------------------------------------------------
 
-Exited with exit code 1.
+Exited with exit code 2.
 
 Resource usage summary:
 
@@ -28,125 +28,9 @@ Resource usage summary:
     Max Swap :                                   -
     Max Processes :                              -
     Max Threads :                                -
-    Run time :                                   29 sec.
-    Turnaround time :                            23 sec.
+    Run time :                                   26 sec.
+    Turnaround time :                            17 sec.
 
 The output (if any) follows:
 
-  File "ddpm_downscale_euler_run2.py", line 46
-SyntaxError: Non-ASCII character '\xc6' in file ddpm_downscale_euler_run2.py on line 46, but no encoding declared; see http://www.python.org/peps/pep-0263.html for details
-Sender: LSF System <lsfadmin@eu-g2-10>
-Subject: Job 251551060: <dowscale02> in cluster <euler> Exited
-
-Job <dowscale02> was submitted from host <eu-login-15> by user <mschillinger> in cluster <euler> at Wed Dec 14 18:23:34 2022
-Job was executed on host(s) <eu-g2-10>, in queue <gpu.24h>, as user <mschillinger> in cluster <euler> at Wed Dec 14 18:23:48 2022
-</cluster/home/mschillinger> was used as the home directory.
-</cluster/home/mschillinger/DL-project/DDPM-dome272> was used as the working directory.
-Started at Wed Dec 14 18:23:48 2022
-Terminated at Wed Dec 14 18:23:52 2022
-Results reported at Wed Dec 14 18:23:52 2022
-
-Your job looked like:
-
-------------------------------------------------------------
-# LSBATCH: User input
-python ddpm_downscale_euler_run3.py
-------------------------------------------------------------
-
-Exited with exit code 1.
-
-Resource usage summary:
-
-    CPU time :                                   0.25 sec.
-    Max Memory :                                 13 MB
-    Average Memory :                             3.00 MB
-    Total Requested Memory :                     10000.00 MB
-    Delta Memory :                               9987.00 MB
-    Max Swap :                                   -
-    Max Processes :                              3
-    Max Threads :                                4
-    Run time :                                   29 sec.
-    Turnaround time :                            18 sec.
-
-The output (if any) follows:
-
-  File "ddpm_downscale_euler_run3.py", line 46
-SyntaxError: Non-ASCII character '\xc6' in file ddpm_downscale_euler_run3.py on line 46, but no encoding declared; see http://www.python.org/peps/pep-0263.html for details
-Sender: LSF System <lsfadmin@eu-g3-004>
-Subject: Job 251551121: <dowscale02> in cluster <euler> Exited
-
-Job <dowscale02> was submitted from host <eu-login-15> by user <mschillinger> in cluster <euler> at Wed Dec 14 18:26:49 2022
-Job was executed on host(s) <eu-g3-004>, in queue <gpu.24h>, as user <mschillinger> in cluster <euler> at Wed Dec 14 18:26:55 2022
-</cluster/home/mschillinger> was used as the home directory.
-</cluster/home/mschillinger/DL-project/DDPM-dome272> was used as the working directory.
-Started at Wed Dec 14 18:26:55 2022
-Terminated at Wed Dec 14 18:26:57 2022
-Results reported at Wed Dec 14 18:26:57 2022
-
-Your job looked like:
-
-------------------------------------------------------------
-# LSBATCH: User input
-python ddpm_downscale_euler_run2.py
-------------------------------------------------------------
-
-Exited with exit code 1.
-
-Resource usage summary:
-
-    CPU time :                                   0.18 sec.
-    Max Memory :                                 13 MB
-    Average Memory :                             2.00 MB
-    Total Requested Memory :                     10000.00 MB
-    Delta Memory :                               9987.00 MB
-    Max Swap :                                   -
-    Max Processes :                              1
-    Max Threads :                                1
-    Run time :                                   2 sec.
-    Turnaround time :                            8 sec.
-
-The output (if any) follows:
-
-  File "ddpm_downscale_euler_run2.py", line 53
-    logging.info(f"Sampling {n} new images....")
-                                              ^
-SyntaxError: invalid syntax
-Sender: LSF System <lsfadmin@eu-g3-007>
-Subject: Job 251551157: <dowscale02> in cluster <euler> Exited
-
-Job <dowscale02> was submitted from host <eu-login-15> by user <mschillinger> in cluster <euler> at Wed Dec 14 18:29:57 2022
-Job was executed on host(s) <eu-g3-007>, in queue <gpu.24h>, as user <mschillinger> in cluster <euler> at Wed Dec 14 18:30:17 2022
-</cluster/home/mschillinger> was used as the home directory.
-</cluster/home/mschillinger/DL-project/DDPM-dome272> was used as the working directory.
-Started at Wed Dec 14 18:30:17 2022
-Terminated at Wed Dec 14 18:30:20 2022
-Results reported at Wed Dec 14 18:30:20 2022
-
-Your job looked like:
-
-------------------------------------------------------------
-# LSBATCH: User input
-python ddpm_downscale_euler_run2.py
-------------------------------------------------------------
-
-Exited with exit code 1.
-
-Resource usage summary:
-
-    CPU time :                                   0.19 sec.
-    Max Memory :                                 13 MB
-    Average Memory :                             -
-    Total Requested Memory :                     10000.00 MB
-    Delta Memory :                               9987.00 MB
-    Max Swap :                                   -
-    Max Processes :                              -
-    Max Threads :                                -
-    Run time :                                   18 sec.
-    Turnaround time :                            23 sec.
-
-The output (if any) follows:
-
-  File "ddpm_downscale_euler_run2.py", line 53
-    logging.info(f"Sampling {n} new images....")
-                                              ^
-SyntaxError: invalid syntax
+python: can't open file 'ddpm_downscale_euler_run2.py': [Errno 2] No such file or directory

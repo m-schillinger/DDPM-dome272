@@ -6,7 +6,7 @@ import torch.nn as nn
 from tqdm import tqdm
 from torch import optim
 from utils import *
-from modulesrun2 import *
+from modules_run2 import *
 import logging
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.io import read_image
@@ -132,21 +132,24 @@ def launch():
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
     args.run_name = "DDPM_downscale_cosineschedule_750steps"
-    args.epochs = 300
-    args.batch_size = 5
+    args.epochs = 300 #todo
+    args.batch_size = 5 #todo
     args.image_size = 64
     args.interp_mode = 'bicubic'
     args.noise_steps = 750
     args.dataset_path_hr = "/cluster/work/math/climate-downscaling/WiSoSuper_data/train/wind/middle_patch/HR"
     args.dataset_path_lr = "/cluster/work/math/climate-downscaling/WiSoSuper_data/train/wind/middle_patch/LR"
-    args.device = "cuda"
+    #args.dataset_path_hr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch_subset/HR"
+    #args.dataset_path_lr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch_subset/LR"
+    args.device = "cuda" #todo
     args.lr = 3e-4
-    args.n_example_imgs = 9
+    args.n_example_imgs = 9 #todo
     os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:1000"
     train(args)
 
 
 if __name__ == '__main__':
+    # pass
     launch()
     # device = "cuda"
     # model = UNet_conditional(num_classes=10).to(device)
