@@ -11,6 +11,7 @@ from torchvision.transforms import ToTensor
 import matplotlib.pyplot as plt
 
 import os
+import numpy as np
 import pandas as pd
 from torchvision.io.image import ImageReadMode
 from torchvision.io import read_image
@@ -18,17 +19,17 @@ import torch.nn.functional as F
 
 class DownscalingDataset(Dataset):
     def __init__(self, hr_dir, lr_dir,
-                 transform_hr=None, transform_lr=None):
+                 transform_hr=None, transform_lr=None, max_len=1e6):
         print(hr_dir)
         self.hr_dir = hr_dir
         self.lr_dir = lr_dir
         self.transform_hr = transform_hr
         self.transform_lr = transform_lr
         self.max_t = (len(os.listdir(self.hr_dir)) - 2) * 2
-        print(self.max_t)
+        self.max_len = max_len
 
     def __len__(self):
-        return len(os.listdir(self.hr_dir))
+        return np.min([len(os.listdir(self.hr_dir)), self.max_len])
 
     def __getitem__(self, idx):
         if(idx * 4 > self.max_t):
@@ -52,14 +53,16 @@ class DownscalingDataset(Dataset):
 
 class DownscalingTemperatureDataset(Dataset):
     def __init__(self, hr_dir, lr_dir,
-                 transform_hr=None, transform_lr=None):
+                 transform_hr=None, transform_lr=None, max_len = 1e6):
         self.hr_dir = hr_dir
         self.lr_dir = lr_dir
         self.transform_hr = transform_hr
         self.transform_lr = transform_lr
+        self.max_len = max_len
 
     def __len__(self):
-        return len(os.listdir(self.hr_dir))
+        return np.min([len(os.listdir(self.hr_dir)), self.max_len])
+
 
     def __getitem__(self, idx):
         filename_hr = "tas_daily_highres_hist-scen_{}.png".format(idx)
@@ -93,10 +96,12 @@ def save_images(images, path, **kwargs):
 
 def get_data(args):
     if args.dataset_type == "temperature":
-        dataset = DownscalingTemperatureDataset(args.dataset_path_hr, args.dataset_path_lr)
+        dataset = DownscalingTemperatureDataset(args.dataset_path_hr, args.dataset_path_lr,
+                                                max_len = args.dataset_size)
         dataloader = DataLoader(dataset, args.batch_size)
     elif args.dataset_type == "wind":
-        dataset = DownscalingDataset(args.dataset_path_hr, args.dataset_path_lr)
+        dataset = DownscalingDataset(args.dataset_path_hr, args.dataset_path_lr,
+                                     max_len = args.dataset_size)
         dataloader = DataLoader(dataset, args.batch_size)
     return dataloader
 

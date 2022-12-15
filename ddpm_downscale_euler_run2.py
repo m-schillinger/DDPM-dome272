@@ -131,19 +131,21 @@ def launch():
     import argparse
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
-    args.run_name = "DDPM_downscale_cosineschedule_750steps"
+    args.run_name = "DDPM_downscale_1000datapoints"
     args.epochs = 300 #todo
     args.batch_size = 5 #todo
     args.image_size = 64
     args.interp_mode = 'bicubic'
     args.noise_steps = 750
+    args.dataset_type = "wind"
     args.dataset_path_hr = "/cluster/work/math/climate-downscaling/WiSoSuper_data/train/wind/middle_patch/HR"
     args.dataset_path_lr = "/cluster/work/math/climate-downscaling/WiSoSuper_data/train/wind/middle_patch/LR"
     #args.dataset_path_hr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch_subset/HR"
     #args.dataset_path_lr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch_subset/LR"
     args.device = "cuda" #todo
-    args.lr = 3e-4
-    args.n_example_imgs = 9 #todo
+    args.lr = 9e-4
+    args.n_example_imgs = 4 #todo
+    args.dataset_size = 1000
     os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:1000"
     train(args)
 

@@ -1,0 +1,103 @@
+Sender: LSF System <lsfadmin@eu-g2-01>
+Subject: Job 251584623: <dowscale04> in cluster <euler> Exited
+
+Job <dowscale04> was submitted from host <eu-login-26> by user <mschillinger> in cluster <euler> at Thu Dec 15 15:47:50 2022
+Job was executed on host(s) <eu-g2-01>, in queue <gpu.24h>, as user <mschillinger> in cluster <euler> at Thu Dec 15 15:48:14 2022
+</cluster/home/mschillinger> was used as the home directory.
+</cluster/home/mschillinger/DL-project/DDPM-dome272> was used as the working directory.
+Started at Thu Dec 15 15:48:14 2022
+Terminated at Thu Dec 15 15:48:20 2022
+Results reported at Thu Dec 15 15:48:20 2022
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+python ddpm_downscale_euler_run2.py
+------------------------------------------------------------
+
+Exited with exit code 1.
+
+Resource usage summary:
+
+    CPU time :                                   3.14 sec.
+    Max Memory :                                 278 MB
+    Average Memory :                             236.00 MB
+    Total Requested Memory :                     10000.00 MB
+    Delta Memory :                               9722.00 MB
+    Max Swap :                                   -
+    Max Processes :                              3
+    Max Threads :                                5
+    Run time :                                   29 sec.
+    Turnaround time :                            30 sec.
+
+The output (if any) follows:
+
+Traceback (most recent call last):
+  File "/cluster/home/mschillinger/DL-project/DDPM-dome272/ddpm_downscale_euler_run2.py", line 154, in <module>
+    launch()
+  File "/cluster/home/mschillinger/DL-project/DDPM-dome272/ddpm_downscale_euler_run2.py", line 149, in launch
+    train(args)
+  File "/cluster/home/mschillinger/DL-project/DDPM-dome272/ddpm_downscale_euler_run2.py", line 78, in train
+    dataloader = get_data(args)
+  File "/cluster/home/mschillinger/DL-project/DDPM-dome272/utils.py", line 98, in get_data
+    if args.dataset_type == "temperature":
+AttributeError: 'Namespace' object has no attribute 'dataset_type'. Did you mean: 'dataset_size'?
+Sender: LSF System <lsfadmin@eu-g2-01>
+Subject: Job 251584827: <dowscale04> in cluster <euler> Exited
+
+Job <dowscale04> was submitted from host <eu-login-26> by user <mschillinger> in cluster <euler> at Thu Dec 15 15:52:54 2022
+Job was executed on host(s) <eu-g2-01>, in queue <gpu.24h>, as user <mschillinger> in cluster <euler> at Thu Dec 15 15:53:14 2022
+</cluster/home/mschillinger> was used as the home directory.
+</cluster/home/mschillinger/DL-project/DDPM-dome272> was used as the working directory.
+Started at Thu Dec 15 15:53:14 2022
+Terminated at Thu Dec 15 15:53:30 2022
+Results reported at Thu Dec 15 15:53:30 2022
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+python ddpm_downscale_euler_run2.py
+------------------------------------------------------------
+
+Exited with exit code 1.
+
+Resource usage summary:
+
+    CPU time :                                   11.32 sec.
+    Max Memory :                                 3271 MB
+    Average Memory :                             125.00 MB
+    Total Requested Memory :                     10000.00 MB
+    Delta Memory :                               6729.00 MB
+    Max Swap :                                   -
+    Max Processes :                              3
+    Max Threads :                                4
+    Run time :                                   39 sec.
+    Turnaround time :                            36 sec.
+
+The output (if any) follows:
+
+2022-12-15 15:53:24.659342: I tensorflow/core/util/util.cc:169] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+/cluster/work/math/climate-downscaling/WiSoSuper_data/train/wind/middle_patch/HR
+Traceback (most recent call last):
+  File "/cluster/home/mschillinger/DL-project/DDPM-dome272/ddpm_downscale_euler_run2.py", line 155, in <module>
+    launch()
+  File "/cluster/home/mschillinger/DL-project/DDPM-dome272/ddpm_downscale_euler_run2.py", line 150, in launch
+    train(args)
+  File "/cluster/home/mschillinger/DL-project/DDPM-dome272/ddpm_downscale_euler_run2.py", line 84, in train
+    l = len(dataloader)
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.10.4/x86_64/lib64/python3.10/site-packages/torch/utils/data/dataloader.py", line 413, in __len__
+    return len(self._index_sampler)
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.10.4/x86_64/lib64/python3.10/site-packages/torch/utils/data/sampler.py", line 242, in __len__
+    return (len(self.sampler) + self.batch_size - 1) // self.batch_size  # type: ignore[arg-type]
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.10.4/x86_64/lib64/python3.10/site-packages/torch/utils/data/sampler.py", line 69, in __len__
+    return len(self.data_source)
+  File "/cluster/home/mschillinger/DL-project/DDPM-dome272/utils.py", line 32, in __len__
+    return np.min(len(os.listdir(self.hr_dir)), self.max_len)
+  File "<__array_function__ internals>", line 180, in amin
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.10.4/x86_64/lib64/python3.10/site-packages/numpy/core/fromnumeric.py", line 2916, in amin
+    return _wrapreduction(a, np.minimum, 'min', axis, None, out,
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.10.4/x86_64/lib64/python3.10/site-packages/numpy/core/fromnumeric.py", line 86, in _wrapreduction
+    return ufunc.reduce(obj, axis, dtype, out, **passkwargs)
+numpy.AxisError: axis 1000 is out of bounds for array of dimension 0
