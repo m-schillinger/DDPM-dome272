@@ -6,7 +6,7 @@ import torch.nn as nn
 from tqdm import tqdm
 from torch import optim
 from utils_parallel import *
-from modules_run2 import *
+from modules import *
 import logging
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.io import read_image
@@ -75,22 +75,22 @@ class Diffusion:
 
 def main(rank, world_size, args):
     # setup the process groups
-    setup(rank, world_size)    
+    setup(rank, world_size)
     # prepare the dataloader
     dataloader = parallel_dataloader(rank, world_size, args)
-    
+
     # instantiate the model(it's your own model) and move it to the right device
     model = UNet_downscale(interp_mode=args.interp_mode, device=rank).to(rank)
-    
+
     # wrap the model with DDP
     # device_ids tell DDP where is your model
     # output_device tells DDP where to output, in our case, it is rank
-    # find_unused_parameters=True instructs DDP to find unused output of the forward() function of any module in the model    
+    # find_unused_parameters=True instructs DDP to find unused output of the forward() function of any module in the model
     model = DDP(model, device_ids=[rank], output_device=rank, find_unused_parameters=True)
-   
+
     optimizer = optim.AdamW(model.parameters(), lr=args.lr)
     mse = nn.MSELoss()
-    
+
     # also set diffusion model to device = rank?
     diffusion = Diffusion(img_size=args.image_size, device=rank, noise_steps=args.noise_steps)
 
@@ -99,30 +99,30 @@ def main(rank, world_size, args):
     l = len(dataloader)
     ema = EMA(0.995)
     ema_model = copy.deepcopy(model).eval().requires_grad_(False)
-   
+
     for epoch in epochs:
         logging.info("Starting epoch {}:".format(epoch))
         # if we are using DistributedSampler, we have to tell it which epoch this is
-        dataloader.sampler.set_epoch(epoch)     
+        dataloader.sampler.set_epoch(epoch)
         pbar = tqdm(dataloader)
-    
+
         for i, (images_hr, images_lr) in enumerate(pbar):
             images_hr = images_hr.to(rank)
             images_lr = images_lr.to(rank)
-            
+
             t = diffusion.sample_timesteps(images_hr.shape[0]).to(rank)
             x_t, noise = diffusion.noise_images(images_hr, t)
             predicted_noise = model(x_t, t, images_lr)
             loss = mse(noise, predicted_noise)
-            
+
             optimizer.zero_grad(set_to_none=True)
             loss.backward()
-            optimizer.step()    
+            optimizer.step()
             ema.step_ema(ema_model, model)
-            
+
             pbar.set_postfix(MSE=loss.item())
             logger.add_scalar("MSE", loss.item(), global_step=epoch * l + i)
-            
+
             if epoch % 50 == 0:
                 # labels = torch.arange(10).long().to(device)
                 # generate some random low-res images
@@ -144,7 +144,7 @@ def main(rank, world_size, args):
                 torch.save(model.state_dict(), os.path.join("models", args.run_name, 'ckpt.pt'))
                 torch.save(ema_model.state_dict(), os.path.join("models", args.run_name, 'ema_ckpt.pt'))
                 torch.save(optimizer.state_dict(), os.path.join("models", args.run_name, 'optim.pt'))
-            
+
             dist.destroy_process_group()
 
 
@@ -169,7 +169,7 @@ def launch():
     args.dataset_size = 5000
     os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:1000"
     # suppose we have 3 gpus
-    world_size = 2        
+    world_size = 2
     mp.spawn(
         main,
         args=(world_size, args),

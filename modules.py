@@ -124,7 +124,6 @@ class Up(nn.Module):
         emb = self.emb_layer(t)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
         return x + emb
 
-
 class UNet(nn.Module):
     def __init__(self, c_in=3, c_out=3, time_dim=256, device="cuda"):
         super().__init__()
@@ -199,11 +198,9 @@ class UNet_conditional(nn.Module):
         self.down3 = Down(256, 256)
         self.sa3 = SelfAttention(256, 8)
 
-        # self.bot1 = DoubleConv(256, 512)
-        # self.bot2 = DoubleConv(512, 512)
-        # self.bot3 = DoubleConv(512, 256)
-        self.bot1 = DoubleConv(256, 256)
-        self.bot3 = DoubleConv(256, 256)
+        self.bot1 = DoubleConv(256, 512)
+        self.bot2 = DoubleConv(512, 512)
+        self.bot3 = DoubleConv(512, 256)
 
         self.up1 = Up(512, 128)
         self.sa4 = SelfAttention(128, 16)
@@ -321,7 +318,7 @@ class UNet_downscale(nn.Module):
 
 
 if __name__ == '__main__':
-    
+
     net = UNet(device="cpu")
     x = torch.randn(3, 3, 64, 64)
     t = x.new_tensor([500] * x.shape[0]).long()
@@ -342,16 +339,18 @@ if __name__ == '__main__':
     args = parser.parse_args()
     args.run_name = "DDPM_downscale"
     args.epochs = 300
-    args.batch_size = 14
+    args.batch_size = 5
     args.image_size = 64
+    args.dataset_type = "wind"
+    args.dataset_size = 100
     args.dataset_path_hr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch/HR"
     args.dataset_path_lr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch/LR"
     args.device = "cpu"
     args.lr = 3e-4
-    
+
     from utils import *
     dataloader = get_data(args)
-    
+
     it = iter(dataloader)
     for i in range(10):
        x, y = next(it)

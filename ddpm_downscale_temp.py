@@ -6,7 +6,7 @@ import torch.nn as nn
 from tqdm import tqdm
 from torch import optim
 from utils import *
-from modules_run2 import *
+from modules import *
 import logging
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.io import read_image
@@ -136,7 +136,7 @@ def launch():
     args.batch_size = 15 #todo
     args.image_size = 64
     args.interp_mode = 'bicubic'
-    args.noise_steps = 750    
+    args.noise_steps = 750
     # args.dataset_path_hr = "/cluster/work/math/climate-downscaling/kba/tas_highres_colour_widerange"
     # args.dataset_path_lr = "/cluster/work/math/climate-downscaling/kba/tas_lowres_colour_widerange"
     args.dataset_type = "temperature"
