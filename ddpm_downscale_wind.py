@@ -17,28 +17,30 @@ logging.basicConfig(format="%(asctime)s - %(levelname)s: %(message)s", level=log
 
 
 class Diffusion:
-    def __init__(self, noise_steps=1000, beta_start=1e-4, beta_end=0.02, img_size=256, device="cuda"):
+    def __init__(self, noise_steps=1000, noise_schedule = "linear", \
+    beta_start=1e-4, beta_end=0.02, img_size=256, device="cuda"):
         self.noise_steps = noise_steps
         self.beta_start = beta_start
         self.beta_end = beta_end
 
-        self.beta = self.prepare_noise_schedule().to(device)
+        self.beta = self.prepare_noise_schedule(type = noise_schedule).to(device)
         self.alpha = 1. - self.beta
         self.alpha_hat = torch.cumprod(self.alpha, dim=0)
 
         self.img_size = img_size
         self.device = device
 
-    def prepare_noise_schedule(self):
-        """
-        cosine schedule as proposed in https://arxiv.org/abs/2102.09672;
-        compare also https://huggingface.co/blog/annotated-diffusion for other schedules
-        """
-        t = torch.linspace(0, self.noise_steps, self.noise_steps + 1)
-        ft = torch.cos((t / self.noise_steps + 0.008) / 1.008 * np.pi / 2)**2
-        alphat = ft / ft[0]
-        betat = 1 - alphat[1:] / alphat[:-1]
-        return torch.clip(betat, 0.0001, 0.9999)
+    def prepare_noise_schedule(self, type):
+        if type == "linear":
+            return torch.linspace(self.beta_start, self.beta_end, self.noise_steps)
+        elif type == "cosine":
+            # cosine schedule as proposed in https://arxiv.org/abs/2102.09672;
+            # compare also https://huggingface.co/blog/annotated-diffusion for other schedules
+            t = torch.linspace(0, self.noise_steps, self.noise_steps + 1)
+            ft = torch.cos((t / self.noise_steps + 0.008) / 1.008 * np.pi / 2)**2
+            alphat = ft / ft[0]
+            betat = 1 - alphat[1:] / alphat[:-1]
+            return torch.clip(betat, 0.0001, 0.9999)
 
     def noise_images(self, x, t):
         sqrt_alpha_hat = torch.sqrt(self.alpha_hat[t])[:, None, None, None]
@@ -79,7 +81,8 @@ def train(args):
     model = UNet_downscale(interp_mode=args.interp_mode, device=device).to(device)
     optimizer = optim.AdamW(model.parameters(), lr=args.lr)
     mse = nn.MSELoss()
-    diffusion = Diffusion(img_size=args.image_size, device=device, noise_steps=args.noise_steps)
+    diffusion = Diffusion(img_size=args.image_size, device=device, \
+        noise_steps=args.noise_steps, noise_schedule=args.noise_schedule)
     logger = SummaryWriter(os.path.join("runs", args.run_name))
     l = len(dataloader)
     ema = EMA(0.995)
@@ -130,10 +133,15 @@ def train(args):
 def launch():
     import argparse
     parser = argparse.ArgumentParser()
+    parser.add_argument('--batch_size', type=int, required=True)
+    parser.add_argument('--dataset_size', type=int, required=True)
+    parser.add_argument('--noise_schedule', type=str, required=True)
+    parser.add_argument('--epochs', type=int, required=True)
     args = parser.parse_args()
-    args.run_name = "DDPM_downscale_4000datapoints_bs15"
-    args.epochs = 500 #todo
-    args.batch_size = 15 #todo
+    args.run_name = f"DDDPM_downscale_ns-{args.noise_schedule}_s-{args.dataset_size}_bs-{args.batch_size}_e{args.epochs}"
+    # args.epochs = 500 #todo
+    # args.batch_size = 15 #todo
+    # args.dataset_size = 4000
     args.image_size = 64
     args.interp_mode = 'bicubic'
     args.noise_steps = 750
@@ -143,9 +151,8 @@ def launch():
     #args.dataset_path_hr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch_subset/HR"
     #args.dataset_path_lr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch_subset/LR"
     args.device = "cuda" #todo
-    args.lr = 3e-4
+    args.lr = 3e-4 * 14 / args.batch_size
     args.n_example_imgs = 4 #todo
-    args.dataset_size = 4000
     os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:1000"
     train(args)
 
