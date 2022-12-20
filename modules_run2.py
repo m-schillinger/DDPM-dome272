@@ -340,8 +340,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
     args.run_name = "DDPM_downscale"
     args.epochs = 300
-    args.batch_size = 14
+    args.batch_size = 5
     args.image_size = 64
+    args.dataset_type = "wind"
+    args.dataset_size = 100
     args.dataset_path_hr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch/HR"
     args.dataset_path_lr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch/LR"
     args.device = "cpu"

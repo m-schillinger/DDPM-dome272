@@ -4,3 +4,5 @@ results/*
 checkpoints/*
 checkpoints.zip
 runs/*
+virtualenv/*
+outfiles/*

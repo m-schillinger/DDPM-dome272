@@ -131,9 +131,9 @@ def launch():
     import argparse
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
-    args.run_name = "DDPM_downscale_climatedata_2000datapoints"
-    args.epochs = 300 #todo
-    args.batch_size = 5 #todo
+    args.run_name = "DDPM_downscale_climatedata_2000datapoints_bs10"
+    args.epochs = 500 #todo
+    args.batch_size = 10 #todo
     args.image_size = 64
     args.interp_mode = 'bicubic'
     args.noise_steps = 750    
@@ -144,7 +144,7 @@ def launch():
     args.dataset_path_hr = "/cluster/work/math/climate-downscaling/kba/tas_highres_colour_widerange"
     args.device = "cuda" #todo
     args.dataset_size = 2000
-    args.lr = 9e-4
+    args.lr = 5e-4
     args.n_example_imgs = 5 #todo
     os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:1000"
     train(args)
