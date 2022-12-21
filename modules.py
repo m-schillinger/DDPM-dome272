@@ -292,8 +292,10 @@ class UNet_downscale(nn.Module):
     def forward(self, x, t, y):
         t = t.unsqueeze(-1).type(torch.float)
         t = self.pos_encoding(t, self.time_dim)
-
-        y = F.interpolate(y.float(), size = [x.shape[-1], x.shape[-2]], mode = self.interp_mode)
+        if y is not None:
+            y = F.interpolate(y.float(), size = [x.shape[-1], x.shape[-2]], mode = self.interp_mode)
+        else:
+            y = torch.zeros_like(x)        
         x = torch.cat([x, y], dim = 1)
         x1 = self.inc(x)
         x2 = self.down1(x1, t)

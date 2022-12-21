@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
+from torch.utils.data import Subset
 from torchvision import datasets
 from torchvision.transforms import ToTensor
 import matplotlib.pyplot as plt
@@ -98,11 +99,13 @@ def get_data(args):
     if args.dataset_type == "temperature":
         dataset = DownscalingTemperatureDataset(args.dataset_path_hr, args.dataset_path_lr,
                                                 max_len = args.dataset_size)
-        dataloader = DataLoader(dataset, args.batch_size)
     elif args.dataset_type == "wind":
         dataset = DownscalingDataset(args.dataset_path_hr, args.dataset_path_lr,
                                      max_len = args.dataset_size)
-        dataloader = DataLoader(dataset, args.batch_size)
+    if args.repeat_observations > 1:
+        dataset = Subset(dataset, np.tile(np.arange(len(dataset)), args.repeat_observations))
+
+    dataloader = DataLoader(dataset, args.batch_size)
     return dataloader
 
 def get_data_simple(args):

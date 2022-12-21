@@ -60,6 +60,9 @@ class Diffusion:
             for i in tqdm(reversed(range(1, self.noise_steps)), position=0):
                 t = (torch.ones(n) * i).long().to(self.device)
                 predicted_noise = model(x, t, images_lr)
+                if cfg_scale > 0:
+                    uncond_predicted_noise = model(x, t, None)
+                    predicted_noise = torch.lerp(uncond_predicted_noise, predicted_noise, cfg_scale)
                 alpha = self.alpha[t][:, None, None, None]
                 alpha_hat = self.alpha_hat[t][:, None, None, None]
                 beta = self.beta[t][:, None, None, None]
@@ -94,6 +97,8 @@ def train(args):
         for i, (images_hr, images_lr) in enumerate(pbar):
             images_hr = images_hr.to(device)
             images_lr = images_lr.to(device)
+            if np.random.random() < args.cfg_proportion:
+                images_lr = None
             t = diffusion.sample_timesteps(images_hr.shape[0]).to(device)
             x_t, noise = diffusion.noise_images(images_hr, t)
             predicted_noise = model(x_t, t, images_lr)
@@ -102,7 +107,7 @@ def train(args):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            ema.step_ema(ema_model, model)
+            # ema.step_ema(ema_model, model)
 
             pbar.set_postfix(MSE=loss.item())
             logger.add_scalar("MSE", loss.item(), global_step=epoch * l + i)
@@ -120,39 +125,53 @@ def train(args):
                 images_lr = torch.cat([images_lr, random_img], dim=0)
 
             sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr)
-            ema_sampled_images = diffusion.sample(ema_model, n=len(images_lr), images_lr=images_lr)
+            sampled_images_cfg1 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 0.1)
+            sampled_images_cfg2 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 3)
+            # ema_sampled_images = diffusion.sample(ema_model, n=len(images_lr), images_lr=images_lr)
             plot_images(sampled_images)
             save_images(images_lr, os.path.join("results", args.run_name, f"{epoch}_lowres.jpg"))
             save_images(sampled_images, os.path.join("results", args.run_name, f"{epoch}.jpg"))
-            save_images(ema_sampled_images, os.path.join("results", args.run_name, f"{epoch}_ema.jpg"))
+            save_images(sampled_images_cfg1, os.path.join("results", args.run_name, f"{epoch}_cfg0-1.jpg"))
+            save_images(sampled_images_cfg2, os.path.join("results", args.run_name, f"{epoch}_cfg3.jpg"))
+            # save_images(ema_sampled_images, os.path.join("results", args.run_name, f"{epoch}_ema.jpg"))
             torch.save(model.state_dict(), os.path.join("models", args.run_name, f"ckpt.pt"))
-            torch.save(ema_model.state_dict(), os.path.join("models", args.run_name, f"ema_ckpt.pt"))
+            # torch.save(ema_model.state_dict(), os.path.join("models", args.run_name, f"ema_ckpt.pt"))
             torch.save(optimizer.state_dict(), os.path.join("models", args.run_name, f"optim.pt"))
 
 
 def launch():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--batch_size', type=int, required=True)
+    parser.add_argument('--batch_size', type=int, required=False, default = 15)
     parser.add_argument('--dataset_size', type=int, required=True)
-    parser.add_argument('--noise_schedule', type=str, required=True)
-    parser.add_argument('--epochs', type=int, required=True)
+    parser.add_argument('--noise_schedule', type=str, required=False, default = "linear")
+    parser.add_argument('--epochs', type=int, required=False, default = 500)
+    parser.add_argument('--lr', type=float, required=False, default = 0.0)
+    parser.add_argument('--dataset_type', type=str, required=False, default = "wind")
+    parser.add_argument('--repeat_observations', type=int, required=False, default = 1)
+    parser.add_argument('--cfg_proportion', type=float, required=False, default = 0)
+
     args = parser.parse_args()
-    args.run_name = f"DDDPM_downscale_ns-{args.noise_schedule}_s-{args.dataset_size}_bs-{args.batch_size}_e{args.epochs}"
+    if args.lr == 0.0:
+        args.lr = 3e-4 * 14 / args.batch_size
+    args.run_name = f"DDPM_downscale_{args.dataset_type}_ns-{args.noise_schedule}_s-{args.dataset_size}_bs-{args.batch_size}_e-{args.epochs}_lr-{args.lr}_cfg{args.cfg_proportion}"
     # args.epochs = 500 #todo
     # args.batch_size = 15 #todo
     # args.dataset_size = 4000
     args.image_size = 64
     args.interp_mode = 'bicubic'
     args.noise_steps = 750
-    args.dataset_type = "wind"
-    args.dataset_path_hr = "/cluster/work/math/climate-downscaling/WiSoSuper_data/train/wind/middle_patch/HR"
-    args.dataset_path_lr = "/cluster/work/math/climate-downscaling/WiSoSuper_data/train/wind/middle_patch/LR"
+    if args.dataset_type == "wind":
+        args.dataset_path_hr = "/cluster/work/math/climate-downscaling/WiSoSuper_data/train/wind/middle_patch/HR"
+        args.dataset_path_lr = "/cluster/work/math/climate-downscaling/WiSoSuper_data/train/wind/middle_patch/LR"
+    elif args.dataset_type == "temperature":
+        args.dataset_path_lr = "/cluster/work/math/climate-downscaling/kba/tas_lowres_colour_widerange"
+        args.dataset_path_hr = "/cluster/work/math/climate-downscaling/kba/tas_highres_colour_widerange"
     #args.dataset_path_hr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch_subset/HR"
     #args.dataset_path_lr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch_subset/LR"
     args.device = "cuda" #todo
-    args.lr = 3e-4 * 14 / args.batch_size
-    args.n_example_imgs = 4 #todo
+    # args.lr = 3e-4 * 14 / args.batch_size
+    args.n_example_imgs = 9 #todo
     os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:1000"
     train(args)
 
@@ -167,5 +186,5 @@ if __name__ == '__main__':
     # diffusion = Diffusion(img_size=64, device=device)
     # n = 8
     # y = torch.Tensor([6] * n).long().to(device)
-    # x = diffusion.sample(model, n, y, cfg_scale=0)
+    # x = diffusion.sample(model, n, y, le=0)
     # plot_images(x)
