@@ -8,7 +8,7 @@ from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from torch.utils.data import Subset
 from torchvision import datasets
-from torchvision.transforms import ToTensor
+import torchvision.transforms as T
 import matplotlib.pyplot as plt
 
 import os
@@ -64,7 +64,6 @@ class DownscalingTemperatureDataset(Dataset):
     def __len__(self):
         return np.min([len(os.listdir(self.hr_dir)), self.max_len])
 
-
     def __getitem__(self, idx):
         filename_hr = "tas_daily_highres_hist-scen_{}.png".format(idx)
         filename_lr = "tas_daily_lowres_hist-scen_{}.png".format(idx)
@@ -79,6 +78,19 @@ class DownscalingTemperatureDataset(Dataset):
             image_lr = self.transform_hr(image_lr)
         return image_hr, image_lr
 
+class DownscalingMNIST(datasets.MNIST):
+    def __init__(self, path, max_len = 1e6, **kwargs):
+        super().__init__(path, transform = T.ToTensor(), **kwargs)
+        self.max_len = max_len
+
+    def __len__(self):
+        return np.min([super().__len__(), self.max_len])
+
+    def __getitem__(self, idx):
+        y, _ = super().__getitem__(idx)
+        y = T.Resize((32,32))(y)
+        x = T.Resize((8, 8))(y)
+        return y, x
 
 def plot_images(images):
     plt.figure(figsize=(32, 32))
@@ -97,14 +109,32 @@ def save_images(images, path, **kwargs):
 
 def get_data(args):
     if args.dataset_type == "temperature":
+        if args.image_size > 64:
+            transform_hr = T.Resize((args.image_size, args.image_size))
+            transform_lr = T.Resize((args.image_size // 4, args.image_size // 4))
+        else:
+            transform_hr = T.CenterCrop((args.image_size, args.image_size))
+            transform_lr = T.CenterCrop((args.image_size // 4, args.image_size // 4))
         dataset = DownscalingTemperatureDataset(args.dataset_path_hr, args.dataset_path_lr,
-                                                max_len = args.dataset_size)
+                                                max_len = args.dataset_size,
+                                                transform_hr = transform_hr,
+                                                transform_lr = transform_lr)
     elif args.dataset_type == "wind":
+        if args.image_size > 64:
+            transform_hr = T.Resize((args.image_size, args.image_size))
+            transform_lr = T.Resize((args.image_size // 4, args.image_size // 4))
+        else:
+            transform_hr = T.CenterCrop((args.image_size, args.image_size))
+            transform_lr = T.CenterCrop((args.image_size // 4, args.image_size // 4))
         dataset = DownscalingDataset(args.dataset_path_hr, args.dataset_path_lr,
-                                     max_len = args.dataset_size)
+                                     max_len = args.dataset_size,
+                                     transform_hr = transform_hr,
+                                     transform_lr = transform_lr)
+    elif args.dataset_type == "MNIST":
+        # currently only implemented for sizes 32 and 8
+        dataset = DownscalingMNIST(args.dataset_path, max_len = args.dataset_size)
     if args.repeat_observations > 1:
         dataset = Subset(dataset, np.tile(np.arange(len(dataset)), args.repeat_observations))
-
     dataloader = DataLoader(dataset, args.batch_size)
     return dataloader
 
