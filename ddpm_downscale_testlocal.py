@@ -17,38 +17,52 @@ logging.basicConfig(format="%(asctime)s - %(levelname)s: %(message)s", level=log
 
 
 class Diffusion:
-    def __init__(self, noise_steps=1000, beta_start=1e-4, beta_end=0.02, img_size=256, device="cuda"):
+    def __init__(self, noise_steps=1000, noise_schedule = "linear", \
+    beta_start=1e-4, beta_end=0.02, img_size=256, device="cuda"):
         self.noise_steps = noise_steps
         self.beta_start = beta_start
         self.beta_end = beta_end
 
-        self.beta = self.prepare_noise_schedule().to(device)
+        self.beta = self.prepare_noise_schedule(type = noise_schedule).to(device)
         self.alpha = 1. - self.beta
         self.alpha_hat = torch.cumprod(self.alpha, dim=0)
 
         self.img_size = img_size
         self.device = device
 
-    def prepare_noise_schedule(self):
-        return torch.linspace(self.beta_start, self.beta_end, self.noise_steps)
+    def prepare_noise_schedule(self, type):
+        if type == "linear":
+            return torch.linspace(self.beta_start, self.beta_end, self.noise_steps)
+        elif type == "cosine":
+            # cosine schedule as proposed in https://arxiv.org/abs/2102.09672;
+            # compare also https://huggingface.co/blog/annotated-diffusion for other schedules
+            t = torch.linspace(0, self.noise_steps, self.noise_steps + 1)
+            ft = torch.cos((t / self.noise_steps + 0.008) / 1.008 * np.pi / 2)**2
+            alphat = ft / ft[0]
+            betat = 1 - alphat[1:] / alphat[:-1]
+            return torch.clip(betat, 0.0001, 0.9999)
 
     def noise_images(self, x, t):
         sqrt_alpha_hat = torch.sqrt(self.alpha_hat[t])[:, None, None, None]
         sqrt_one_minus_alpha_hat = torch.sqrt(1 - self.alpha_hat[t])[:, None, None, None]
-        Ɛ = torch.randn_like(x)
-        return sqrt_alpha_hat * x + sqrt_one_minus_alpha_hat * Ɛ, Ɛ
+        eps = torch.randn_like(x)
+        return sqrt_alpha_hat * x + sqrt_one_minus_alpha_hat * eps, eps
 
     def sample_timesteps(self, n):
         return torch.randint(low=1, high=self.noise_steps, size=(n,))
 
-    def sample(self, model, n, images_lr, cfg_scale=3):
+    def sample(self, model, n, images_lr, c_in, cfg_scale=3):
         logging.info(f"Sampling {n} new images....")
         model.eval()
         with torch.no_grad():
-            x = torch.randn((n, 3, self.img_size, self.img_size)).to(self.device)
+            x = torch.randn((n, c_in, self.img_size, self.img_size)).to(self.device)
+            images_lr = images_lr.to(self.device)
             for i in tqdm(reversed(range(1, self.noise_steps)), position=0):
                 t = (torch.ones(n) * i).long().to(self.device)
                 predicted_noise = model(x, t, images_lr)
+                if cfg_scale > 0:
+                    uncond_predicted_noise = model(x, t, None)
+                    predicted_noise = torch.lerp(uncond_predicted_noise, predicted_noise, cfg_scale)
                 alpha = self.alpha[t][:, None, None, None]
                 alpha_hat = self.alpha_hat[t][:, None, None, None]
                 beta = self.beta[t][:, None, None, None]
@@ -67,10 +81,11 @@ def train(args):
     setup_logging(args.run_name)
     device = args.device
     dataloader = get_data(args)
-    model = UNet_downscale(interp_mode=args.interp_mode, device=device).to(device)
+    model = UNet_downscale(c_in = args.c_in, c_out = args.c_out, interp_mode=args.interp_mode, img_size = args.image_size, device=device).to(device)
     optimizer = optim.AdamW(model.parameters(), lr=args.lr)
     mse = nn.MSELoss()
-    diffusion = Diffusion(img_size=args.image_size, device=device)
+    diffusion = Diffusion(img_size=args.image_size, device=device, \
+        noise_steps=args.noise_steps, noise_schedule=args.noise_schedule)
     logger = SummaryWriter(os.path.join("runs", args.run_name))
     l = len(dataloader)
     ema = EMA(0.995)
@@ -82,6 +97,8 @@ def train(args):
         for i, (images_hr, images_lr) in enumerate(pbar):
             images_hr = images_hr.to(device)
             images_lr = images_lr.to(device)
+            if np.random.random() < args.cfg_proportion:
+                images_lr = None
             t = diffusion.sample_timesteps(images_hr.shape[0]).to(device)
             x_t, noise = diffusion.noise_images(images_hr, t)
             predicted_noise = model(x_t, t, images_lr)
@@ -90,53 +107,93 @@ def train(args):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            ema.step_ema(ema_model, model)
+            # ema.step_ema(ema_model, model)
 
             pbar.set_postfix(MSE=loss.item())
             logger.add_scalar("MSE", loss.item(), global_step=epoch * l + i)
 
-        if epoch % 10 == 0:
+        if epoch % 50 == 0:
             # labels = torch.arange(10).long().to(device)
             # generate some random low-res images
-            random_file=random.choice(os.listdir(args.dataset_path_lr))
-            path =  os.path.join(args.dataset_path_lr, random_file)
-            images_lr = read_image(path, mode = ImageReadMode(3)).unsqueeze(0)
-            for i in range(args.n_example_imgs):
+            
+            if args.dataset_type == "wind" or args.dataset_type == "temperature":
                 random_file=random.choice(os.listdir(args.dataset_path_lr))
                 path =  os.path.join(args.dataset_path_lr, random_file)
-                random_img = read_image(path, mode = ImageReadMode(3)).unsqueeze(0)
-                images_lr = torch.cat([images_lr, random_img], dim=0)
-            
-            print(images_lr.shape)
-            sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr)
-            ema_sampled_images = diffusion.sample(ema_model, n=len(images_lr), images_lr=images_lr)
-            plot_images(sampled_images)
-            save_images(images_lr, os.path.join("results", args.run_name, f"{epoch}_lowres.jpg"))
-            save_images(sampled_images, os.path.join("results", args.run_name, f"{epoch}.jpg"))
-            save_images(ema_sampled_images, os.path.join("results", args.run_name, f"{epoch}_ema.jpg"))
+                images_lr = read_image(path, mode = ImageReadMode(3)).unsqueeze(0)
+                for i in range(args.n_example_imgs):
+                    random_file=random.choice(os.listdir(args.dataset_path_lr))
+                    path =  os.path.join(args.dataset_path_lr, random_file)
+                    random_img = read_image(path, mode = ImageReadMode(3)).unsqueeze(0)
+                    images_lr = torch.cat([images_lr, random_img], dim=0)
+    
+                sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr)
+                sampled_images_cfg1 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 0.1)
+                sampled_images_cfg2 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 3)
+                # ema_sampled_images = diffusion.sample(ema_model, n=len(images_lr), images_lr=images_lr)
+                plot_images(sampled_images)
+                save_images(images_lr, os.path.join("results", args.run_name, f"{epoch}_lowres.jpg"))
+                save_images(sampled_images, os.path.join("results", args.run_name, f"{epoch}.jpg"))
+                save_images(sampled_images_cfg1, os.path.join("results", args.run_name, f"{epoch}_cfg0-1.jpg"))
+                save_images(sampled_images_cfg2, os.path.join("results", args.run_name, f"{epoch}_cfg3.jpg"))
+                # save_images(ema_sampled_images, os.path.join("results", args.run_name, f"{epoch}_ema.jpg"))
+            elif args.dataset_type == "MNIST":
+                images_hr, images_lr = next(iter(dataloader))
+                sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, c_in =1)
+                save_images(sampled_images, os.path.join("results", args.run_name, f"{epoch}.jpg"))
+
             torch.save(model.state_dict(), os.path.join("models", args.run_name, f"ckpt.pt"))
-            torch.save(ema_model.state_dict(), os.path.join("models", args.run_name, f"ema_ckpt.pt"))
+            # torch.save(ema_model.state_dict(), os.path.join("models", args.run_name, f"ema_ckpt.pt"))
             torch.save(optimizer.state_dict(), os.path.join("models", args.run_name, f"optim.pt"))
 
 
 def launch():
     import argparse
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser("")
     args = parser.parse_args()
-    args.run_name = "DDPM_downscale"
-    args.epochs = 1
+    args.repeat_observations = 1
+    args.dataset_type = "MNIST"
+    args.noise_schedule = "linear"
+    args.lr = 2e-4
+    args.cfg_proportion = 0
+    args.dataset_size = 10
     args.batch_size = 1
-    args.image_size = 64
+    args.epochs = 10
+    if args.lr == 0.0:
+        args.lr = 3e-4 * 14 / args.batch_size
+    args.run_name = f"DDPM_downscale_{args.dataset_type}_ns-{args.noise_schedule}_s-{args.dataset_size}_bs-{args.batch_size}_e-{args.epochs}_lr-{args.lr}_cfg{args.cfg_proportion}"
+    # args.epochs = 500 #todo
+    # args.batch_size = 15 #todo
+    # args.dataset_size = 4000
     args.interp_mode = 'bicubic'
-    args.dataset_path_hr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch_subset/HR"
-    args.dataset_path_lr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch_subset/LR"
-    args.device = "cpu"
-    args.lr = 3e-4
-    args.n_example_imgs = 1
+    args.noise_steps = 100
+    if args.dataset_type == "wind":
+        args.dataset_path_hr = "/cluster/work/math/climate-downscaling/WiSoSuper_data/train/wind/middle_patch/HR"
+        args.dataset_path_lr = "/cluster/work/math/climate-downscaling/WiSoSuper_data/train/wind/middle_patch/LR"
+        args.c_in = 6
+        args.c_out = 3
+        args.image_size = 64
+    elif args.dataset_type == "temperature":
+        args.dataset_path_lr = "/cluster/work/math/climate-downscaling/kba/tas_lowres_colour_widerange"
+        args.dataset_path_hr = "/cluster/work/math/climate-downscaling/kba/tas_highres_colour_widerange"
+        args.c_in = 6
+        args.c_out = 3
+        args.image_size = 64
+    elif args.dataset_type == "MNIST":
+        args.dataset_path = "/scratch/users/mschillinger/Documents/DL-project/"
+        args.c_in = 2
+        args.c_out = 1
+        args.image_size = 32
+    #args.dataset_path_hr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch_subset/HR"
+    #args.dataset_path_lr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch_subset/LR"
+    args.device = "cpu" #todo
+    # args.lr = 3e-4 * 14 / args.batch_size
+    args.n_example_imgs = 1 #todo
+    os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:1000"
     train(args)
 
 
 if __name__ == '__main__':
+    # pass
     launch()
     # device = "cuda"
     # model = UNet_conditional(num_classes=10).to(device)
@@ -145,5 +202,5 @@ if __name__ == '__main__':
     # diffusion = Diffusion(img_size=64, device=device)
     # n = 8
     # y = torch.Tensor([6] * n).long().to(device)
-    # x = diffusion.sample(model, n, y, cfg_scale=0)
+    # x = diffusion.sample(model, n, y, le=0)
     # plot_images(x)
