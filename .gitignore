@@ -6,3 +6,4 @@ checkpoints.zip
 runs/*
 virtualenv/*
 outfiles/*
+data/*

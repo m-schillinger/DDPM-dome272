@@ -51,7 +51,7 @@ class Diffusion:
     def sample_timesteps(self, n):
         return torch.randint(low=1, high=self.noise_steps, size=(n,))
 
-    def sample(self, model, n, images_lr, c_in, cfg_scale=3):
+    def sample(self, model, n, images_lr, c_in, cfg_scale=0):
         logging.info(f"Sampling {n} new images....")
         model.eval()
         with torch.no_grad():
@@ -81,7 +81,8 @@ def train(args):
     setup_logging(args.run_name)
     device = args.device
     dataloader = get_data(args)
-    model = UNet_downscale(c_in = args.c_in, c_out = args.c_out, interp_mode=args.interp_mode, img_size = args.image_size, device=device).to(device)
+    model = UNet_downscale(c_in = args.c_in, c_out = args.c_out,
+                           interp_mode=args.interp_mode, img_size = args.image_size, device=device).to(device)
     optimizer = optim.AdamW(model.parameters(), lr=args.lr)
     mse = nn.MSELoss()
     diffusion = Diffusion(img_size=args.image_size, device=device, \

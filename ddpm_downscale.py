@@ -51,11 +51,11 @@ class Diffusion:
     def sample_timesteps(self, n):
         return torch.randint(low=1, high=self.noise_steps, size=(n,))
 
-    def sample(self, model, n, images_lr, cfg_scale=3):
+    def sample(self, model, n, images_lr, c_in, cfg_scale=0):
         logging.info(f"Sampling {n} new images....")
         model.eval()
         with torch.no_grad():
-            x = torch.randn((n, 3, self.img_size, self.img_size)).to(self.device)
+            x = torch.randn((n, c_in, self.img_size, self.img_size)).to(self.device)
             images_lr = images_lr.to(self.device)
             for i in tqdm(reversed(range(1, self.noise_steps)), position=0):
                 t = (torch.ones(n) * i).long().to(self.device)
@@ -81,7 +81,9 @@ def train(args):
     setup_logging(args.run_name)
     device = args.device
     dataloader = get_data(args)
-    model = UNet_downscale(interp_mode=args.interp_mode, device=device).to(device)
+    model = UNet_downscale(c_in = args.c_in, c_out = args.c_out, 
+                           img_size = args.image_size,
+                           interp_mode=args.interp_mode, device=device).to(device)
     optimizer = optim.AdamW(model.parameters(), lr=args.lr)
     mse = nn.MSELoss()
     diffusion = Diffusion(img_size=args.image_size, device=device, \
@@ -115,25 +117,32 @@ def train(args):
         if epoch % 50 == 0:
             # labels = torch.arange(10).long().to(device)
             # generate some random low-res images
-            random_file=random.choice(os.listdir(args.dataset_path_lr))
-            path =  os.path.join(args.dataset_path_lr, random_file)
-            images_lr = read_image(path, mode = ImageReadMode(3)).unsqueeze(0)
-            for i in range(args.n_example_imgs):
+            if args.dataset_type == "wind" or args.dataset_type == "temperature":
                 random_file=random.choice(os.listdir(args.dataset_path_lr))
                 path =  os.path.join(args.dataset_path_lr, random_file)
-                random_img = read_image(path, mode = ImageReadMode(3)).unsqueeze(0)
-                images_lr = torch.cat([images_lr, random_img], dim=0)
+                images_lr = read_image(path, mode = ImageReadMode(3)).unsqueeze(0)
+                for i in range(args.n_example_imgs):
+                    random_file=random.choice(os.listdir(args.dataset_path_lr))
+                    path =  os.path.join(args.dataset_path_lr, random_file)
+                    random_img = read_image(path, mode = ImageReadMode(3)).unsqueeze(0)
+                    images_lr = torch.cat([images_lr, random_img], dim=0)
+    
+                sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr)
+                sampled_images_cfg1 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 0.1)
+                sampled_images_cfg2 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 3)
+                # ema_sampled_images = diffusion.sample(ema_model, n=len(images_lr), images_lr=images_lr)
+                plot_images(sampled_images)
+                save_images(images_lr, os.path.join("results", args.run_name, f"{epoch}_lowres.jpg"))
+                save_images(sampled_images, os.path.join("results", args.run_name, f"{epoch}.jpg"))
+                save_images(sampled_images_cfg1, os.path.join("results", args.run_name, f"{epoch}_cfg0-1.jpg"))
+                save_images(sampled_images_cfg2, os.path.join("results", args.run_name, f"{epoch}_cfg3.jpg"))
+                # save_images(ema_sampled_images, os.path.join("results", args.run_name, f"{epoch}_ema.jpg"))
 
-            sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr)
-            sampled_images_cfg1 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 0.1)
-            sampled_images_cfg2 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 3)
-            # ema_sampled_images = diffusion.sample(ema_model, n=len(images_lr), images_lr=images_lr)
-            plot_images(sampled_images)
-            save_images(images_lr, os.path.join("results", args.run_name, f"{epoch}_lowres.jpg"))
-            save_images(sampled_images, os.path.join("results", args.run_name, f"{epoch}.jpg"))
-            save_images(sampled_images_cfg1, os.path.join("results", args.run_name, f"{epoch}_cfg0-1.jpg"))
-            save_images(sampled_images_cfg2, os.path.join("results", args.run_name, f"{epoch}_cfg3.jpg"))
-            # save_images(ema_sampled_images, os.path.join("results", args.run_name, f"{epoch}_ema.jpg"))
+            elif args.dataset_type == "MNIST":
+                images_hr, images_lr = next(iter(dataloader))
+                sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, c_in =1)
+                save_images(sampled_images, os.path.join("results", args.run_name, f"{epoch}.jpg"))
+                
             torch.save(model.state_dict(), os.path.join("models", args.run_name, f"ckpt.pt"))
             # torch.save(ema_model.state_dict(), os.path.join("models", args.run_name, f"ema_ckpt.pt"))
             torch.save(optimizer.state_dict(), os.path.join("models", args.run_name, f"optim.pt"))
@@ -150,23 +159,39 @@ def launch():
     parser.add_argument('--dataset_type', type=str, required=False, default = "wind")
     parser.add_argument('--repeat_observations', type=int, required=False, default = 1)
     parser.add_argument('--cfg_proportion', type=float, required=False, default = 0)
+    parser.add_argument('--image_size', type=int, required=False, default = None)
+
 
     args = parser.parse_args()
     if args.lr == 0.0:
         args.lr = 3e-4 * 14 / args.batch_size
-    args.run_name = f"DDPM_downscale_{args.dataset_type}_ns-{args.noise_schedule}_s-{args.dataset_size}_bs-{args.batch_size}_e-{args.epochs}_lr-{args.lr}_cfg{args.cfg_proportion}"
-    # args.epochs = 500 #todo
-    # args.batch_size = 15 #todo
-    # args.dataset_size = 4000
-    args.image_size = 64
-    args.interp_mode = 'bicubic'
-    args.noise_steps = 750
     if args.dataset_type == "wind":
         args.dataset_path_hr = "/cluster/work/math/climate-downscaling/WiSoSuper_data/train/wind/middle_patch/HR"
         args.dataset_path_lr = "/cluster/work/math/climate-downscaling/WiSoSuper_data/train/wind/middle_patch/LR"
+        args.c_in = 6
+        args.c_out = 3
+        if args.image_size is None:
+            args.image_size = 64
     elif args.dataset_type == "temperature":
         args.dataset_path_lr = "/cluster/work/math/climate-downscaling/kba/tas_lowres_colour_widerange"
         args.dataset_path_hr = "/cluster/work/math/climate-downscaling/kba/tas_highres_colour_widerange"
+        args.c_in = 6
+        args.c_out = 3
+        if args.image_size is None:
+            args.image_size = 64
+    elif args.dataset_type == "MNIST":
+        args.dataset_path = "/cluster/home/mschillinger/DL-project/MNIST"
+        args.c_in = 2
+        args.c_out = 1
+        if args.image_size is None:
+            args.image_size = 32
+    args.run_name = f"DDPM_downscale_{args.dataset_type}_ns-{args.noise_schedule}_s-{args.dataset_size}_bs-{args.batch_size}_e-{args.epochs}_lr-{args.lr}_cfg{args.cfg_proportion}_size{args.image_size}"
+    # args.epochs = 500 #todo
+    # args.batch_size = 15 #todo
+    # args.dataset_size = 4000
+    args.interp_mode = 'bicubic'
+    args.noise_steps = 750
+
     #args.dataset_path_hr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch_subset/HR"
     #args.dataset_path_lr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch_subset/LR"
     args.device = "cuda" #todo
