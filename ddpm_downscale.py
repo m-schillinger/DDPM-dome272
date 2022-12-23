@@ -72,6 +72,8 @@ class Diffusion:
                 else:
                     noise = torch.zeros_like(x)
                 x = 1 / torch.sqrt(alpha) * (x - ((1 - alpha) / (torch.sqrt(1 - alpha_hat))) * predicted_noise) + torch.sqrt(beta) * noise
+                # save intermediate results
+                # To do
         model.train()
         x = (x.clamp(-1, 1) + 1) / 2
         x = (x * 255).type(torch.uint8)
@@ -120,6 +122,9 @@ def train(args):
             # generate some random low-res images
             if args.dataset_type == "wind" or args.dataset_type == "temperature":
                 random_file=random.choice(os.listdir(args.dataset_path_lr))
+                # this line above chooses a random low-res file
+                # to do: pick some that have already been used in training
+                # and some that are new
                 path =  os.path.join(args.dataset_path_lr, random_file)
                 images_lr = read_image(path, mode = ImageReadMode(3)).unsqueeze(0)
                 for i in range(args.n_example_imgs):
@@ -138,6 +143,8 @@ def train(args):
                 save_images(sampled_images_cfg1, os.path.join("results", args.run_name, f"{epoch}_cfg0-1.jpg"))
                 save_images(sampled_images_cfg2, os.path.join("results", args.run_name, f"{epoch}_cfg3.jpg"))
                 save_images(ema_sampled_images, os.path.join("results", args.run_name, f"{epoch}_ema.jpg"))
+                torch.save(sampled_images, os.path.join("results", args.run_name, f"{epoch}_tensor.pt"))
+
 
             elif args.dataset_type == "MNIST":
                 it = iter(dataloader)
@@ -152,13 +159,7 @@ def train(args):
                 ndarr = grid.permute(1, 2, 0).to('cpu').numpy()
                 ndarr = (ndarr + 1 ) / 2.0 # rescale to 0,1
                 plt.imsave(os.path.join("results", args.run_name, f"{epoch}_lowres.jpg"), ndarr, cmap = "gray")
-
                 torch.save(sampled_images, os.path.join("results", args.run_name, f"{epoch}_tensor.pt"))
-                original_stdout = sys.stdout # Save a reference to the original standard output                
-                with open(os.path.join("results", args.run_name, "tensors.txt"), 'a') as f:
-                    sys.stdout = f # Change the standard output to the file we created.
-                    print(sampled_images)
-                    sys.stdout = original_stdout # Reset the standard output to its original value
             
             torch.save(model.state_dict(), os.path.join("models", args.run_name, f"ckpt.pt"))
             # torch.save(ema_model.state_dict(), os.path.join("models", args.run_name, f"ema_ckpt.pt"))
@@ -203,17 +204,10 @@ def launch():
         if args.image_size is None:
             args.image_size = 32
     args.run_name = f"DDPM_downscale_{args.dataset_type}_ns-{args.noise_schedule}_s-{args.dataset_size}_bs-{args.batch_size}_e-{args.epochs}_lr-{args.lr}_cfg{args.cfg_proportion}_size{args.image_size}"
-    # args.epochs = 500 #todo
-    # args.batch_size = 15 #todo
-    # args.dataset_size = 4000
     args.interp_mode = 'bicubic'
     args.noise_steps = 750
-
-    #args.dataset_path_hr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch_subset/HR"
-    #args.dataset_path_lr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch_subset/LR"
-    args.device = "cuda" #todo
-    # args.lr = 3e-4 * 14 / args.batch_size
-    args.n_example_imgs = 9 #todo
+    args.device = "cuda"
+    args.n_example_imgs = 9 
     os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:1000"
     train(args)
 
