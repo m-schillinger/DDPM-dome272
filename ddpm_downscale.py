@@ -13,6 +13,8 @@ from torchvision.io import read_image
 from torchvision.io.image import ImageReadMode
 import random
 import sys
+import torchvision.transforms as T
+
 
 logging.basicConfig(format="%(asctime)s - %(levelname)s: %(message)s", level=logging.INFO, datefmt="%I:%M:%S")
 
@@ -133,7 +135,12 @@ def train(args):
                     random_img = read_image(path, mode = ImageReadMode(3)).unsqueeze(0)
                     images_lr = torch.cat([images_lr, random_img], dim=0)
     
-                sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr)
+                norm = 255 / 2.0
+                transform_lr = T.Compose([
+                    T.CenterCrop((args.image_size // 4, args.image_size // 4)),
+                    T.Normalize((norm, norm, norm), (norm, norm, norm))
+                    ])
+                sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 0)
                 sampled_images_cfg1 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 0.1)
                 sampled_images_cfg2 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 3)
                 ema_sampled_images = diffusion.sample(ema_model, n=len(images_lr), images_lr=images_lr)

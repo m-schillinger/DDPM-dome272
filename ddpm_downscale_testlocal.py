@@ -12,6 +12,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision.io import read_image
 from torchvision.io.image import ImageReadMode
 import random
+import torchvision.transforms as T
 
 logging.basicConfig(format="%(asctime)s - %(levelname)s: %(message)s", level=logging.INFO, datefmt="%I:%M:%S")
 
@@ -127,6 +128,12 @@ def train(args):
                     random_img = read_image(path, mode = ImageReadMode(3)).unsqueeze(0)
                     images_lr = torch.cat([images_lr, random_img], dim=0)
     
+                norm = 255 / 2.0
+                transform_lr = T.Compose([
+                    T.CenterCrop((args.image_size // 4, args.image_size // 4)),
+                    T.Normalize((norm, norm, norm), (norm, norm, norm))
+                    ])
+                images_lr = transform_lr(images_lr.float())
                 sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr)
                 sampled_images_cfg1 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 0.1)
                 sampled_images_cfg2 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 3)
@@ -161,7 +168,7 @@ def launch():
     parser = argparse.ArgumentParser("")
     args = parser.parse_args()
     args.repeat_observations = 1
-    args.dataset_type = "MNIST"
+    args.dataset_type = "wind"
     args.noise_schedule = "linear"
     args.lr = 2e-4
     args.cfg_proportion = 0
@@ -177,8 +184,8 @@ def launch():
     args.interp_mode = 'bicubic'
     args.noise_steps = 10
     if args.dataset_type == "wind":
-        args.dataset_path_hr = "/cluster/work/math/climate-downscaling/WiSoSuper_data/train/wind/middle_patch/HR"
-        args.dataset_path_lr = "/cluster/work/math/climate-downscaling/WiSoSuper_data/train/wind/middle_patch/LR"
+        args.dataset_path_hr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch_subset/HR"
+        args.dataset_path_lr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch_subset/LR"
         args.c_in = 6
         args.c_out = 3
         args.image_size = 64
