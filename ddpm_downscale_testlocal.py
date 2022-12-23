@@ -138,9 +138,18 @@ def train(args):
                 save_images(sampled_images_cfg2, os.path.join("results", args.run_name, f"{epoch}_cfg3.jpg"))
                 # save_images(ema_sampled_images, os.path.join("results", args.run_name, f"{epoch}_ema.jpg"))
             elif args.dataset_type == "MNIST":
-                images_hr, images_lr = next(iter(dataloader))
-                sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, c_in =1)
+                it = iter(dataloader)
+                images_hr, images_lr = next(it)
+                for i in range(args.n_example_imgs):
+                    images_hr, random_img = next(it)
+                    images_lr = torch.cat([images_lr, random_img], dim=0)
+
+                sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, c_in =1)                
                 save_images(sampled_images, os.path.join("results", args.run_name, f"{epoch}.jpg"))
+                grid = torchvision.utils.make_grid(images_lr)
+                ndarr = grid.permute(1, 2, 0).to('cpu').numpy()
+                plt.imshow(ndarr, cmap = "gray")
+                plt.imsave("test_lowres.jpg", ndarr, cmap = "gray")
 
             torch.save(model.state_dict(), os.path.join("models", args.run_name, f"ckpt.pt"))
             # torch.save(ema_model.state_dict(), os.path.join("models", args.run_name, f"ema_ckpt.pt"))
@@ -166,7 +175,7 @@ def launch():
     # args.batch_size = 15 #todo
     # args.dataset_size = 4000
     args.interp_mode = 'bicubic'
-    args.noise_steps = 100
+    args.noise_steps = 10
     if args.dataset_type == "wind":
         args.dataset_path_hr = "/cluster/work/math/climate-downscaling/WiSoSuper_data/train/wind/middle_patch/HR"
         args.dataset_path_lr = "/cluster/work/math/climate-downscaling/WiSoSuper_data/train/wind/middle_patch/LR"
@@ -188,7 +197,7 @@ def launch():
     #args.dataset_path_lr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch_subset/LR"
     args.device = "cpu" #todo
     # args.lr = 3e-4 * 14 / args.batch_size
-    args.n_example_imgs = 1 #todo
+    args.n_example_imgs = 2 #todo
     os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:1000"
     train(args)
 

@@ -12,6 +12,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision.io import read_image
 from torchvision.io.image import ImageReadMode
 import random
+import sys
 
 logging.basicConfig(format="%(asctime)s - %(levelname)s: %(message)s", level=logging.INFO, datefmt="%I:%M:%S")
 
@@ -51,7 +52,7 @@ class Diffusion:
     def sample_timesteps(self, n):
         return torch.randint(low=1, high=self.noise_steps, size=(n,))
 
-    def sample(self, model, n, images_lr, c_in, cfg_scale=0):
+    def sample(self, model, n, images_lr, c_in = 3, cfg_scale=0):
         logging.info(f"Sampling {n} new images....")
         model.eval()
         with torch.no_grad():
@@ -109,7 +110,7 @@ def train(args):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            # ema.step_ema(ema_model, model)
+            ema.step_ema(ema_model, model)
 
             pbar.set_postfix(MSE=loss.item())
             logger.add_scalar("MSE", loss.item(), global_step=epoch * l + i)
@@ -130,19 +131,35 @@ def train(args):
                 sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr)
                 sampled_images_cfg1 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 0.1)
                 sampled_images_cfg2 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 3)
-                # ema_sampled_images = diffusion.sample(ema_model, n=len(images_lr), images_lr=images_lr)
-                plot_images(sampled_images)
+                ema_sampled_images = diffusion.sample(ema_model, n=len(images_lr), images_lr=images_lr)
+                # plot_images(sampled_images)
                 save_images(images_lr, os.path.join("results", args.run_name, f"{epoch}_lowres.jpg"))
                 save_images(sampled_images, os.path.join("results", args.run_name, f"{epoch}.jpg"))
                 save_images(sampled_images_cfg1, os.path.join("results", args.run_name, f"{epoch}_cfg0-1.jpg"))
                 save_images(sampled_images_cfg2, os.path.join("results", args.run_name, f"{epoch}_cfg3.jpg"))
-                # save_images(ema_sampled_images, os.path.join("results", args.run_name, f"{epoch}_ema.jpg"))
+                save_images(ema_sampled_images, os.path.join("results", args.run_name, f"{epoch}_ema.jpg"))
 
             elif args.dataset_type == "MNIST":
-                images_hr, images_lr = next(iter(dataloader))
-                sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, c_in =1)
+                it = iter(dataloader)
+                images_hr, images_lr = next(it)
+                for i in range(args.n_example_imgs):
+                    images_hr, random_img = next(it)
+                    images_lr = torch.cat([images_lr, random_img], dim=0)
+
+                sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, c_in =1, cfg_scale = 0)
                 save_images(sampled_images, os.path.join("results", args.run_name, f"{epoch}.jpg"))
-                
+                grid = torchvision.utils.make_grid(images_lr)
+                ndarr = grid.permute(1, 2, 0).to('cpu').numpy()
+                ndarr = (ndarr + 1 ) / 2.0 # rescale to 0,1
+                plt.imsave(os.path.join("results", args.run_name, f"{epoch}_lowres.jpg"), ndarr, cmap = "gray")
+
+                torch.save(sampled_images, os.path.join("results", args.run_name, f"{epoch}_tensor.pt"))
+                original_stdout = sys.stdout # Save a reference to the original standard output                
+                with open(os.path.join("results", args.run_name, "tensors.txt"), 'a') as f:
+                    sys.stdout = f # Change the standard output to the file we created.
+                    print(sampled_images)
+                    sys.stdout = original_stdout # Reset the standard output to its original value
+            
             torch.save(model.state_dict(), os.path.join("models", args.run_name, f"ckpt.pt"))
             # torch.save(ema_model.state_dict(), os.path.join("models", args.run_name, f"ema_ckpt.pt"))
             torch.save(optimizer.state_dict(), os.path.join("models", args.run_name, f"optim.pt"))

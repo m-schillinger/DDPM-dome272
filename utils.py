@@ -80,7 +80,9 @@ class DownscalingTemperatureDataset(Dataset):
 
 class DownscalingMNIST(datasets.MNIST):
     def __init__(self, path, max_len = 1e6, **kwargs):
-        super().__init__(path, transform = T.ToTensor(), **kwargs)
+        super().__init__(path, transform = T.Compose([T.ToTensor(),
+                                                      torchvision.transforms.Normalize((0.5), (0.5))]), 
+                                                     **kwargs)
         self.max_len = max_len
 
     def __len__(self):
@@ -109,23 +111,49 @@ def save_images(images, path, **kwargs):
 
 def get_data(args):
     if args.dataset_type == "temperature":
+        norm = 255 / 2.0
         if args.image_size > 64:
-            transform_hr = T.Resize((args.image_size, args.image_size))
-            transform_lr = T.Resize((args.image_size // 4, args.image_size // 4))
+            transform_hr = T.Compose([
+                T.Resize((args.image_size, args.image_size)),
+                T.Normalize((norm, norm, norm), (norm, norm, norm))
+                ])
+            transform_lr = T.Compose([
+                T.Resize((args.image_size // 4, args.image_size // 4)),
+                T.Normalize((norm, norm, norm), (norm, norm, norm))
+                ])
         else:
-            transform_hr = T.CenterCrop((args.image_size, args.image_size))
-            transform_lr = T.CenterCrop((args.image_size // 4, args.image_size // 4))
+            transform_hr = T.Compose([
+                T.CenterCrop((args.image_size, args.image_size)),
+                T.Normalize((norm, norm, norm), (norm, norm, norm))
+                ])                      
+            transform_lr = T.Compose([
+                T.CenterCrop((args.image_size // 4, args.image_size // 4)),
+                T.Normalize((norm, norm, norm), (norm, norm, norm))
+                ])
         dataset = DownscalingTemperatureDataset(args.dataset_path_hr, args.dataset_path_lr,
                                                 max_len = args.dataset_size,
                                                 transform_hr = transform_hr,
                                                 transform_lr = transform_lr)
     elif args.dataset_type == "wind":
+        norm = 255 / 2.0
         if args.image_size > 64:
-            transform_hr = T.Resize((args.image_size, args.image_size))
-            transform_lr = T.Resize((args.image_size // 4, args.image_size // 4))
+            transform_hr = T.Compose([ 
+                T.Resize((args.image_size, args.image_size)),
+                T.Normalize((norm, norm, norm), (norm, norm, norm))
+                ])
+            transform_lr = T.Compose([ 
+                T.Resize((args.image_size // 4, args.image_size // 4)),
+                T.Normalize((norm, norm, norm), (norm, norm, norm))
+                ])
         else:
-            transform_hr = T.CenterCrop((args.image_size, args.image_size))
-            transform_lr = T.CenterCrop((args.image_size // 4, args.image_size // 4))
+            transform_hr = T.Compose([
+                T.CenterCrop((args.image_size, args.image_size)),
+                T.Normalize((norm, norm, norm), (norm, norm, norm))
+                ])
+            transform_lr = T.Compose([
+                T.CenterCrop((args.image_size // 4, args.image_size // 4)),
+                T.Normalize((norm, norm, norm), (norm, norm, norm))
+                ])
         dataset = DownscalingDataset(args.dataset_path_hr, args.dataset_path_lr,
                                      max_len = args.dataset_size,
                                      transform_hr = transform_hr,
