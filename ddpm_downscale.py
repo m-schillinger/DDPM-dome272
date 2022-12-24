@@ -140,6 +140,7 @@ def train(args):
                     T.CenterCrop((args.image_size // 4, args.image_size // 4)),
                     T.Normalize((norm, norm, norm), (norm, norm, norm))
                     ])
+                images_lr = transform_lr(images_lr.float())
                 sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 0)
                 sampled_images_cfg1 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 0.1)
                 sampled_images_cfg2 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 3)
