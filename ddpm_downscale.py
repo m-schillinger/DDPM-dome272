@@ -86,7 +86,7 @@ def train(args):
     setup_logging(args.run_name)
     device = args.device
     dataloader = get_data(args)
-    model = UNet_downscale(c_in = args.c_in, c_out = args.c_out, 
+    model = UNet_downscale(c_in = args.c_in, c_out = args.c_out,
                            img_size = args.image_size,
                            interp_mode=args.interp_mode, device=device).to(device)
     optimizer = optim.AdamW(model.parameters(), lr=args.lr)
@@ -134,7 +134,7 @@ def train(args):
                     path =  os.path.join(args.dataset_path_lr, random_file)
                     random_img = read_image(path, mode = ImageReadMode(3)).unsqueeze(0)
                     images_lr = torch.cat([images_lr, random_img], dim=0)
-    
+
                 norm = 255 / 2.0
                 transform_lr = T.Compose([
                     T.CenterCrop((args.image_size // 4, args.image_size // 4)),
@@ -168,7 +168,7 @@ def train(args):
                 ndarr = (ndarr + 1 ) / 2.0 # rescale to 0,1
                 plt.imsave(os.path.join("results", args.run_name, f"{epoch}_lowres.jpg"), ndarr, cmap = "gray")
                 torch.save(sampled_images, os.path.join("results", args.run_name, f"{epoch}_tensor.pt"))
-            
+
             torch.save(model.state_dict(), os.path.join("models", args.run_name, f"ckpt.pt"))
             # torch.save(ema_model.state_dict(), os.path.join("models", args.run_name, f"ema_ckpt.pt"))
             torch.save(optimizer.state_dict(), os.path.join("models", args.run_name, f"optim.pt"))
@@ -186,7 +186,7 @@ def launch():
     parser.add_argument('--repeat_observations', type=int, required=False, default = 1)
     parser.add_argument('--cfg_proportion', type=float, required=False, default = 0)
     parser.add_argument('--image_size', type=int, required=False, default = None)
-
+    parser.add_argument('--shuffle', type=bool, required=False, default = False)
 
     args = parser.parse_args()
     if args.lr == 0.0:
@@ -211,11 +211,11 @@ def launch():
         args.c_out = 1
         if args.image_size is None:
             args.image_size = 32
-    args.run_name = f"DDPM_downscale_{args.dataset_type}_ns-{args.noise_schedule}_s-{args.dataset_size}_bs-{args.batch_size}_e-{args.epochs}_lr-{args.lr}_cfg{args.cfg_proportion}_size{args.image_size}"
+    args.run_name = f"DDPM_downscale_{args.dataset_type}_ns-{args.noise_schedule}_s-{args.dataset_size}_bs-{args.batch_size}_e-{args.epochs}_lr-{args.lr}_cfg{args.cfg_proportion}_size{args.image_size}__shuffle{args.shuffle}"
     args.interp_mode = 'bicubic'
     args.noise_steps = 750
     args.device = "cuda"
-    args.n_example_imgs = 9 
+    args.n_example_imgs = 9
     os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:1000"
     train(args)
 

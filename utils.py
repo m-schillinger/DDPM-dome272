@@ -81,7 +81,7 @@ class DownscalingTemperatureDataset(Dataset):
 class DownscalingMNIST(datasets.MNIST):
     def __init__(self, path, max_len = 1e6, **kwargs):
         super().__init__(path, transform = T.Compose([T.ToTensor(),
-                                                      torchvision.transforms.Normalize((0.5), (0.5))]), 
+                                                      torchvision.transforms.Normalize((0.5), (0.5))]),
                                                      **kwargs)
         self.max_len = max_len
 
@@ -125,7 +125,7 @@ def get_data(args):
             transform_hr = T.Compose([
                 T.CenterCrop((args.image_size, args.image_size)),
                 T.Normalize((norm, norm, norm), (norm, norm, norm))
-                ])                      
+                ])
             transform_lr = T.Compose([
                 T.CenterCrop((args.image_size // 4, args.image_size // 4)),
                 T.Normalize((norm, norm, norm), (norm, norm, norm))
@@ -137,11 +137,11 @@ def get_data(args):
     elif args.dataset_type == "wind":
         norm = 255 / 2.0
         if args.image_size > 64:
-            transform_hr = T.Compose([ 
+            transform_hr = T.Compose([
                 T.Resize((args.image_size, args.image_size)),
                 T.Normalize((norm, norm, norm), (norm, norm, norm))
                 ])
-            transform_lr = T.Compose([ 
+            transform_lr = T.Compose([
                 T.Resize((args.image_size // 4, args.image_size // 4)),
                 T.Normalize((norm, norm, norm), (norm, norm, norm))
                 ])
@@ -163,7 +163,7 @@ def get_data(args):
         dataset = DownscalingMNIST(args.dataset_path, max_len = args.dataset_size)
     if args.repeat_observations > 1:
         dataset = Subset(dataset, np.tile(np.arange(len(dataset)), args.repeat_observations))
-    dataloader = DataLoader(dataset, args.batch_size)
+    dataloader = DataLoader(dataset, args.batch_size, shuffle=args.shuffle)
     return dataloader
 
 def get_data_simple(args):
