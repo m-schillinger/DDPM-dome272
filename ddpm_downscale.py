@@ -85,7 +85,7 @@ class Diffusion:
 def train(args):
     setup_logging(args.run_name)
     device = args.device
-    dataloader = get_data(args)
+    dataloader, dataloader_test = get_data(args)
     model = UNet_downscale(c_in = args.c_in, c_out = args.c_out,
                            img_size = args.image_size,
                            interp_mode=args.interp_mode, device=device).to(device)
@@ -126,24 +126,41 @@ def train(args):
                 # alternative version: sample only from training data
                 it = iter(dataloader)
                 images_hr, images_lr = next(it)
-                for i in range(args.n_example_imgs):
-                    images_hr, random_img = next(it)
-                    images_lr = torch.cat([images_lr, random_img], dim=0)
-                images_lr_transformed = images_lr
+                images_lr = images_lr[0:args.n_example_imgs]
+                images_hr = images_hr[0:args.n_example_imgs]
+                images_hr_save =  (images_hr + 1) / 2.0 * 255
+                images_hr_save = images_hr_save.type(torch.uint8)
                 images_lr_save =  (images_lr + 1) / 2.0 * 255
                 images_lr_save = images_lr_save.type(torch.uint8)
 
-                sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr_transformed, cfg_scale = 0)
-                sampled_images_cfg1 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr_transformed, cfg_scale = 0.1)
-                sampled_images_cfg2 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr_transformed, cfg_scale = 3)
-                ema_sampled_images = diffusion.sample(ema_model, n=len(images_lr), images_lr=images_lr_transformed)
-                # plot_images(sampled_images)
+                sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 0)
                 save_images(images_lr_save, os.path.join("results", args.run_name, f"{epoch}_lowres.jpg"))
-                save_images(sampled_images, os.path.join("results", args.run_name, f"{epoch}.jpg"))
-                save_images(sampled_images_cfg1, os.path.join("results", args.run_name, f"{epoch}_cfg0-1.jpg"))
-                save_images(sampled_images_cfg2, os.path.join("results", args.run_name, f"{epoch}_cfg3.jpg"))
-                save_images(ema_sampled_images, os.path.join("results", args.run_name, f"{epoch}_ema.jpg"))
+                save_images(images_hr_save, os.path.join("results", args.run_name, f"{epoch}_truth.jpg"))
+                save_images(sampled_images, os.path.join("results", args.run_name, f"{epoch}_generated.jpg"))
                 torch.save(sampled_images, os.path.join("results", args.run_name, f"{epoch}_tensor.pt"))
+
+                # sampled_images_cfg1 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr_transformed, cfg_scale = 0.1)
+                # sampled_images_cfg2 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr_transformed, cfg_scale = 3)
+                # ema_sampled_images = diffusion.sample(ema_model, n=len(images_lr), images_lr=images_lr_transformed)
+                # save_images(sampled_images_cfg1, os.path.join("results", args.run_name, f"{epoch}_cfg0-1.jpg"))
+                # save_images(sampled_images_cfg2, os.path.join("results", args.run_name, f"{epoch}_cfg3.jpg"))
+                # save_images(ema_sampled_images, os.path.join("results", args.run_name, f"{epoch}_ema.jpg"))
+
+                it_test = iter(dataloader_test)
+                images_hr, images_lr = next(it_test)
+                images_lr = images_lr[0:args.n_example_imgs]
+                images_hr = images_hr[0:args.n_example_imgs]
+                images_hr_save =  (images_hr + 1) / 2.0 * 255
+                images_hr_save = images_hr_save.type(torch.uint8)
+                images_lr_save =  (images_lr + 1) / 2.0 * 255
+                images_lr_save = images_lr_save.type(torch.uint8)
+
+                sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 0)
+                sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 0)
+                save_images(images_lr_save, os.path.join("results", args.run_name, f"{epoch}_test_lowres.jpg"))
+                save_images(images_hr_save, os.path.join("results", args.run_name, f"{epoch}_test_truth.jpg"))
+                save_images(sampled_images, os.path.join("results", args.run_name, f"{epoch}_test_generated.jpg"))
+                torch.save(sampled_images, os.path.join("results", args.run_name, f"{epoch}_test_tensor.pt"))
 
 
             elif args.dataset_type == "MNIST":
@@ -203,11 +220,11 @@ def launch():
         args.c_out = 1
         if args.image_size is None:
             args.image_size = 32
-    args.run_name = f"NewTransform_NewSampling/DDPM_downscale_{args.dataset_type}_ns-{args.noise_schedule}_s-{args.dataset_size}_bs-{args.batch_size}_e-{args.epochs}_lr-{args.lr}_cfg{args.cfg_proportion}_size{args.image_size}_shuffle{args.shuffle}"
+    args.run_name = f"NewTransform_NewSampling_v2/DDPM_downscale_{args.dataset_type}_ns-{args.noise_schedule}_s-{args.dataset_size}_bs-{args.batch_size}_e-{args.epochs}_lr-{args.lr}_cfg{args.cfg_proportion}_size{args.image_size}_shuffle{args.shuffle}"
     args.interp_mode = 'bicubic'
     args.noise_steps = 750
     args.device = "cuda"
-    args.n_example_imgs = 9
+    args.n_example_imgs = 5
     os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:1000"
     train(args)
 

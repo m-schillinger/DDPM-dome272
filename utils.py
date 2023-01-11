@@ -163,8 +163,15 @@ def get_data(args):
         dataset = DownscalingMNIST(args.dataset_path, max_len = args.dataset_size)
     if args.repeat_observations > 1:
         dataset = Subset(dataset, np.tile(np.arange(len(dataset)), args.repeat_observations))
-    dataloader = DataLoader(dataset, args.batch_size, shuffle=args.shuffle)
-    return dataloader
+
+    n_train = int(np.floor(len(dataset) * 4.0 / 5.0))
+    perm = np.random.permutation(np.arange(0, len(dataset),1))
+    dataset_train = Subset(dataset, perm[0:n_train])
+    dataset_test = Subset(dataset, perm[n_train:])
+
+    dataloader_train = DataLoader(dataset_train, args.batch_size, shuffle=args.shuffle)
+    dataloader_test = DataLoader(dataset_test, args.batch_size, shuffle=args.shuffle)
+    return dataloader_train, dataloader_test
 
 def get_data_simple(args):
     transforms = torchvision.transforms.Compose([
