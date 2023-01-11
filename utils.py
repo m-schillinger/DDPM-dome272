@@ -75,7 +75,7 @@ class DownscalingTemperatureDataset(Dataset):
         if self.transform_hr:
             image_hr = self.transform_hr(image_hr)
         if self.transform_lr:
-            image_lr = self.transform_hr(image_lr)
+            image_lr = self.transform_lr(image_lr)
         return image_hr, image_lr
 
 class DownscalingMNIST(datasets.MNIST):
