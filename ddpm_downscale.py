@@ -123,30 +123,22 @@ def train(args):
             # labels = torch.arange(10).long().to(device)
             # generate some random low-res images
             if args.dataset_type == "wind" or args.dataset_type == "temperature":
-                random_file=random.choice(os.listdir(args.dataset_path_lr))
-                # this line above chooses a random low-res file
-                # to do: pick some that have already been used in training
-                # and some that are new
-                path =  os.path.join(args.dataset_path_lr, random_file)
-                images_lr = read_image(path, mode = ImageReadMode(3)).unsqueeze(0)
+                # alternative version: sample only from training data
+                it = iter(dataloader)
+                images_hr, images_lr = next(it)
                 for i in range(args.n_example_imgs):
-                    random_file=random.choice(os.listdir(args.dataset_path_lr))
-                    path =  os.path.join(args.dataset_path_lr, random_file)
-                    random_img = read_image(path, mode = ImageReadMode(3)).unsqueeze(0)
+                    images_hr, random_img = next(it)
                     images_lr = torch.cat([images_lr, random_img], dim=0)
+                images_lr_transformed = images_lr
+                images_lr_save =  (images_lr + 1) / 2.0 * 255
+                images_lr_save = images_lr_save.type(torch.uint8)
 
-                norm = 255 / 2.0
-                transform_lr = T.Compose([
-                    T.CenterCrop((args.image_size // 4, args.image_size // 4)),
-                    T.Normalize((norm, norm, norm), (norm, norm, norm))
-                    ])
-                images_lr_transformed = transform_lr(images_lr.float())
                 sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr_transformed, cfg_scale = 0)
                 sampled_images_cfg1 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr_transformed, cfg_scale = 0.1)
                 sampled_images_cfg2 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr_transformed, cfg_scale = 3)
                 ema_sampled_images = diffusion.sample(ema_model, n=len(images_lr), images_lr=images_lr_transformed)
                 # plot_images(sampled_images)
-                save_images(images_lr, os.path.join("results", args.run_name, f"{epoch}_lowres.jpg"))
+                save_images(images_lr_save, os.path.join("results", args.run_name, f"{epoch}_lowres.jpg"))
                 save_images(sampled_images, os.path.join("results", args.run_name, f"{epoch}.jpg"))
                 save_images(sampled_images_cfg1, os.path.join("results", args.run_name, f"{epoch}_cfg0-1.jpg"))
                 save_images(sampled_images_cfg2, os.path.join("results", args.run_name, f"{epoch}_cfg3.jpg"))
@@ -211,7 +203,7 @@ def launch():
         args.c_out = 1
         if args.image_size is None:
             args.image_size = 32
-    args.run_name = f"DDPM_downscale_{args.dataset_type}_ns-{args.noise_schedule}_s-{args.dataset_size}_bs-{args.batch_size}_e-{args.epochs}_lr-{args.lr}_cfg{args.cfg_proportion}_size{args.image_size}__shuffle{args.shuffle}"
+    args.run_name = f"NewTransform_NewSampling/DDPM_downscale_{args.dataset_type}_ns-{args.noise_schedule}_s-{args.dataset_size}_bs-{args.batch_size}_e-{args.epochs}_lr-{args.lr}_cfg{args.cfg_proportion}_size{args.image_size}_shuffle{args.shuffle}"
     args.interp_mode = 'bicubic'
     args.noise_steps = 750
     args.device = "cuda"
