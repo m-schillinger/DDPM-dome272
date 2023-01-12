@@ -14,7 +14,7 @@ from torchvision.io.image import ImageReadMode
 import random
 import sys
 import torchvision.transforms as T
-
+import pickle
 
 logging.basicConfig(format="%(asctime)s - %(levelname)s: %(message)s", level=logging.INFO, datefmt="%I:%M:%S")
 
@@ -86,6 +86,10 @@ def train(args):
     setup_logging(args.run_name)
     device = args.device
     dataloader, dataloader_test = get_data(args)
+    with open('models' + args.run_name + 'dataloader_train', 'wb') as dataloader_train_file:
+        pickle.dump(dataloader, dataloader_train_file)
+    with open('models' + args.run_name + 'dataloader_test', 'wb') as dataloader_test_file:
+        pickle.dump(dataloader_test, dataloader_test_file)
     model = UNet_downscale(c_in = args.c_in, c_out = args.c_out,
                            img_size = args.image_size,
                            interp_mode=args.interp_mode, device=device).to(device)
@@ -114,7 +118,7 @@ def train(args):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            ema.step_ema(ema_model, model)
+            # ema.step_ema(ema_model, model)
 
             pbar.set_postfix(MSE=loss.item())
             logger.add_scalar("MSE", loss.item(), global_step=epoch * l + i)
@@ -156,7 +160,6 @@ def train(args):
                 images_lr_save = images_lr_save.type(torch.uint8)
 
                 sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 0)
-                sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 0)
                 save_images(images_lr_save, os.path.join("results", args.run_name, f"{epoch}_test_lowres.jpg"))
                 save_images(images_hr_save, os.path.join("results", args.run_name, f"{epoch}_test_truth.jpg"))
                 save_images(sampled_images, os.path.join("results", args.run_name, f"{epoch}_test_generated.jpg"))
@@ -187,7 +190,7 @@ def launch():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--batch_size', type=int, required=False, default = 15)
-    parser.add_argument('--dataset_size', type=int, required=True)
+    parser.add_argument('--dataset_size', type=int, required=False, default = 10000)
     parser.add_argument('--noise_schedule', type=str, required=False, default = "linear")
     parser.add_argument('--epochs', type=int, required=False, default = 500)
     parser.add_argument('--lr', type=float, required=False, default = 0.0)
@@ -198,6 +201,7 @@ def launch():
     parser.add_argument('--shuffle', type=bool, required=False, default = False)
 
     args = parser.parse_args()
+    args.proportion_train = 2.0
     if args.lr == 0.0:
         args.lr = 3e-4 * 14 / args.batch_size
     if args.dataset_type == "wind":
@@ -220,11 +224,18 @@ def launch():
         args.c_out = 1
         if args.image_size is None:
             args.image_size = 32
-    args.run_name = f"NewTransform_NewSampling_v2/DDPM_downscale_{args.dataset_type}_ns-{args.noise_schedule}_s-{args.dataset_size}_bs-{args.batch_size}_e-{args.epochs}_lr-{args.lr}_cfg{args.cfg_proportion}_size{args.image_size}_shuffle{args.shuffle}"
+    args.run_name = f"NewTransform_NewSampling_s-{args.dataset_size}_train-0.5/DDPM_downscale_{args.dataset_type}_ns-{args.noise_schedule}__bs-{args.batch_size}_e-{args.epochs}_lr-{args.lr}_cfg{args.cfg_proportion}_size{args.image_size}_shuffle{args.shuffle}"
     args.interp_mode = 'bicubic'
     args.noise_steps = 750
     args.device = "cuda"
     args.n_example_imgs = 5
+    if args.dataset_size == 10000:
+        # fixed random permutation of dataset
+        with open('data_permutation', 'rb') as data_permutation_file: 
+            args.perm = pickle.load(data_permutation_file)
+    else:
+        args.perm = np.random.permutation(np.arange(0, args.dataset_size,1))
+
     os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:1000"
     train(args)
 

@@ -164,10 +164,9 @@ def get_data(args):
     if args.repeat_observations > 1:
         dataset = Subset(dataset, np.tile(np.arange(len(dataset)), args.repeat_observations))
 
-    n_train = int(np.floor(len(dataset) * 4.0 / 5.0))
-    perm = np.random.permutation(np.arange(0, len(dataset),1))
-    dataset_train = Subset(dataset, perm[0:n_train])
-    dataset_test = Subset(dataset, perm[n_train:])
+    n_train = int(np.floor(len(dataset) / args.proportion_train))
+    dataset_train = Subset(dataset, args.perm[0:n_train])
+    dataset_test = Subset(dataset, args.perm[n_train:])
 
     dataloader_train = DataLoader(dataset_train, args.batch_size, shuffle=args.shuffle)
     dataloader_test = DataLoader(dataset_test, args.batch_size, shuffle=args.shuffle)
@@ -186,6 +185,7 @@ def get_data_simple(args):
 
 def setup_logging(run_name):
     os.makedirs("models", exist_ok=True)
+    os.makedirs("results", exist_ok=True)
     os.makedirs("results", exist_ok=True)
     os.makedirs(os.path.join("models", run_name), exist_ok=True)
     os.makedirs(os.path.join("results", run_name), exist_ok=True)
