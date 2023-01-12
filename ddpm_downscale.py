@@ -86,10 +86,6 @@ def train(args):
     setup_logging(args.run_name)
     device = args.device
     dataloader, dataloader_test = get_data(args)
-    with open('models' + args.run_name + 'dataloader_train', 'wb') as dataloader_train_file:
-        pickle.dump(dataloader, dataloader_train_file)
-    with open('models' + args.run_name + 'dataloader_test', 'wb') as dataloader_test_file:
-        pickle.dump(dataloader_test, dataloader_test_file)
     model = UNet_downscale(c_in = args.c_in, c_out = args.c_out,
                            img_size = args.image_size,
                            interp_mode=args.interp_mode, device=device).to(device)
@@ -231,8 +227,8 @@ def launch():
     args.device = "cuda"
     args.n_example_imgs = 5
     if args.dataset_size == 10000:
-        # fixed random permutation of dataset
-        with open('data_permutation', 'rb') as data_permutation_file: 
+        # fixed random permutation in this case
+        with open('data_permutation', 'rb') as data_permutation_file:
             args.perm = pickle.load(data_permutation_file)
     else:
         args.perm = np.random.permutation(np.arange(0, args.dataset_size,1))
