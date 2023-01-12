@@ -199,6 +199,7 @@ def launch():
     parser.add_argument('--cfg_proportion', type=float, required=False, default = 0)
     parser.add_argument('--image_size', type=int, required=False, default = None)
     parser.add_argument('--shuffle', type=bool, required=False, default = False)
+    parser.add_argument('--resolution_ratio', type=int, required=False, default = 4)
 
     args = parser.parse_args()
     args.proportion_train = 2.0

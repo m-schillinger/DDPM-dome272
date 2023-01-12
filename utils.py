@@ -118,7 +118,7 @@ def get_data(args):
                 T.Normalize((norm, norm, norm), (norm, norm, norm))
                 ])
             transform_lr = T.Compose([
-                T.Resize((args.image_size // 4, args.image_size // 4)),
+                T.Resize((args.image_size // args.resolution_ratio, args.image_size // args.resolution_ratio)),
                 T.Normalize((norm, norm, norm), (norm, norm, norm))
                 ])
         else:
@@ -127,7 +127,7 @@ def get_data(args):
                 T.Normalize((norm, norm, norm), (norm, norm, norm))
                 ])
             transform_lr = T.Compose([
-                T.CenterCrop((args.image_size // 4, args.image_size // 4)),
+                T.CenterCrop((args.image_size // args.resolution_ratio, args.image_size // args.resolution_ratio)),
                 T.Normalize((norm, norm, norm), (norm, norm, norm))
                 ])
         dataset = DownscalingTemperatureDataset(args.dataset_path_hr, args.dataset_path_lr,
@@ -142,7 +142,7 @@ def get_data(args):
                 T.Normalize((norm, norm, norm), (norm, norm, norm))
                 ])
             transform_lr = T.Compose([
-                T.Resize((args.image_size // 4, args.image_size // 4)),
+                T.Resize((args.image_size // args.resolution_ratio, args.image_size // args.resolution_ratio)),
                 T.Normalize((norm, norm, norm), (norm, norm, norm))
                 ])
         else:
@@ -151,7 +151,7 @@ def get_data(args):
                 T.Normalize((norm, norm, norm), (norm, norm, norm))
                 ])
             transform_lr = T.Compose([
-                T.CenterCrop((args.image_size // 4, args.image_size // 4)),
+                T.CenterCrop((args.image_size // args.resolution_ratio, args.image_size // args.resolution_ratio)),
                 T.Normalize((norm, norm, norm), (norm, norm, norm))
                 ])
         dataset = DownscalingDataset(args.dataset_path_hr, args.dataset_path_lr,
