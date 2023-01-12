@@ -165,8 +165,12 @@ def get_data(args):
         dataset = Subset(dataset, np.tile(np.arange(len(dataset)), args.repeat_observations))
 
     n_train = int(np.floor(len(dataset) / args.proportion_train))
+    print(n_train)
+    print(args.perm)
     dataset_train = Subset(dataset, args.perm[0:n_train])
     dataset_test = Subset(dataset, args.perm[n_train:])
+    print(len(dataset_train))
+    print(len(dataset_test))
 
     dataloader_train = DataLoader(dataset_train, args.batch_size, shuffle=args.shuffle)
     dataloader_test = DataLoader(dataset_test, args.batch_size, shuffle=args.shuffle)

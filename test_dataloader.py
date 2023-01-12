@@ -7,13 +7,14 @@ Created on Wed Jan 11 18:49:06 2023
 """
 
 from utils import *
+import pickle
 
 if __name__ == "__main__":
     
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--batch_size', type=int, required=False, default = 5)
-    parser.add_argument('--dataset_size', type=int, required=False, default = 200)
+    parser.add_argument('--dataset_size', type=int, required=False, default = 10000)
     parser.add_argument('--noise_schedule', type=str, required=False, default = "linear")
     parser.add_argument('--epochs', type=int, required=False, default = 500)
     parser.add_argument('--lr', type=float, required=False, default = 0.0)
@@ -22,11 +23,18 @@ if __name__ == "__main__":
     parser.add_argument('--cfg_proportion', type=float, required=False, default = 0)
     parser.add_argument('--image_size', type=int, required=False, default = 64)
     parser.add_argument('--shuffle', type=bool, required=False, default = False)
-    args = parser.parse_args()
+    parser.add_argument('--resolution_ratio', type=int, required=False, default = 4)
 
+    args = parser.parse_args()
+    args.proportion_train = 2.0
     args.dataset_path_hr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch/HR"
     args.dataset_path_lr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch/LR"
     args.n_example_imgs = 5
+    
+    if args.dataset_size == 10000:
+        # fixed random permutation in this case
+        with open('data_permutation', 'rb') as data_permutation_file:
+            args.perm = pickle.load(data_permutation_file)
     
     dataloader, dataloader_test = get_data(args)
     it = iter(dataloader)
