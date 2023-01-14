@@ -89,7 +89,11 @@ def train(args):
     model = UNet_downscale(c_in = args.c_in, c_out = args.c_out,
                            img_size = args.image_size,
                            interp_mode=args.interp_mode, device=device).to(device)
+    model.load_state_dict(torch.load('./models/NewTransform_NewSampling_fixed_s-10000_train-0.5/DDPM_downscale_wind_ns-linear__bs-15_e-801_lr-0.0001_cfg0.1_size64_shuffleTrue/ckpt.pt',
+             map_location=device))
     optimizer = optim.AdamW(model.parameters(), lr=args.lr)
+    optimizer.load_state_dict(torch.load('./models/NewTransform_NewSampling_fixed_s-10000_train-0.5/DDPM_downscale_wind_ns-linear__bs-15_e-801_lr-0.0001_cfg0.1_size64_shuffleTrue/optim.pt',
+             map_location=device))
     mse = nn.MSELoss()
     diffusion = Diffusion(img_size=args.image_size, device=device, \
         noise_steps=args.noise_steps, noise_schedule=args.noise_schedule)
@@ -98,7 +102,7 @@ def train(args):
     ema = EMA(0.995)
     ema_model = copy.deepcopy(model).eval().requires_grad_(False)
 
-    for epoch in range(args.epochs):
+    for epoch in range(368, args.epochs):
         logging.info(f"Starting epoch {epoch}:")
         pbar = tqdm(dataloader)
         for i, (images_hr, images_lr) in enumerate(pbar):
@@ -221,7 +225,7 @@ def launch():
         args.c_out = 1
         if args.image_size is None:
             args.image_size = 32
-    args.run_name = f"NewTransform_NewSampling_fixed_s-{args.dataset_size}_train-0.5_v2/DDPM_downscale_{args.dataset_type}_ns-{args.noise_schedule}__bs-{args.batch_size}_e-{args.epochs}_lr-{args.lr}_cfg{args.cfg_proportion}_size{args.image_size}_shuffle{args.shuffle}"
+    args.run_name = f"NewTransform_NewSampling_fixed_s-{args.dataset_size}_train-0.5/DDPM_downscale_{args.dataset_type}_ns-{args.noise_schedule}__bs-{args.batch_size}_e-{args.epochs}_lr-{args.lr}_cfg{args.cfg_proportion}_size{args.image_size}_shuffle{args.shuffle}"
     args.interp_mode = 'bicubic'
     args.noise_steps = 750
     args.device = "cuda"

@@ -1,8 +1,9 @@
 
+
 import os
 import math
 import numpy as np
-# from skimage.metrics import structural_similarity as SSIM
+from skimage.metrics import structural_similarity as SSIM
 import copy
 import torch
 import torch.nn as nn
@@ -24,7 +25,7 @@ from ddpm_downscale import *
 def load_model(loading = "directly"):    
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--batch_size', type=int, required=False, default = 15)
+    parser.add_argument('--batch_size', type=int, required=False, default = 4)
     parser.add_argument('--dataset_size', type=int, required=False, default = 10000)
     parser.add_argument('--noise_schedule', type=str, required=False, default = "linear")
     parser.add_argument('--epochs', type=int, required=False, default = 500)
@@ -41,19 +42,20 @@ def load_model(loading = "directly"):
     args.proportion_train = 2.0
     args.lr = 3e-4 * 14 / args.batch_size
     
-    # args.dataset_path_hr = "./data/middle_patch_v2/HR"
-    # args.dataset_path_lr = "./data/middle_patch_v2/LR"
-    args.dataset_path_hr =  "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch/HR"
-    args.dataset_path_lr =  "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch/LR"
+    args.dataset_path_hr = "./data/middle_patch_v2/middle_patch/HR"
+    args.dataset_path_lr = "./data/middle_patch_v2/middle_patch/LR"
+    
 
     args.c_in = 6
     args.c_out = 3
     args.image_size = 64
-    device = 'cpu' # to do: change
+    device = 'cuda' # to do: change
     args.device = device
-    args.n_example_imgs = 5
+    args.n_example_imgs = 2000
     args.dataset_size == 10000
     args.noise_steps = 750
+    
+
     
     
     #Get the lr images
@@ -64,6 +66,16 @@ def load_model(loading = "directly"):
     #         images.append(img)
     # images_lr = np.array(images)
     # images_lr = torch.from_numpy(images_lr)
+    
+    model = UNet_downscale(c_in = args.c_in, c_out = args.c_out,
+                                   img_size = args.image_size,
+                                   interp_mode=args.interp_mode, device=device).to(device)
+            #load the trained model
+    model.load_state_dict(torch.load('.\ckpt.pt',
+                                             map_location='cuda')) ########### need to change the path
+
+    diffusion = Diffusion(img_size=args.image_size, device=device, \
+                noise_steps=args.noise_steps, noise_schedule=args.noise_schedule)
     
     # OPTION DIRECTLY
     if loading == "directly":
@@ -88,44 +100,76 @@ def load_model(loading = "directly"):
         print(images_lr_save.shape)
         print(images_lr.shape)
     
-    # OPTION DATALOADER
     if loading == "from_dataloader":
-        if args.dataset_size == 10000:
-            # fixed random permutation in this case
-            with open('data_permutation', 'rb') as data_permutation_file:
-                args.perm = pickle.load(data_permutation_file)
-                
+        if args.dataset_size == 10000:# fixed random permutation in this case
+                with open('data_permutation', 'rb') as data_permutation_file:
+                    args.perm = pickle.load(data_permutation_file)
         dataloader, dataloader_test = get_data(args)
         it_test = iter(dataloader_test)
-        images_hr, images_lr = next(it_test)
-        images_lr = images_lr[0:args.n_example_imgs]
-        images_hr = images_hr[0:args.n_example_imgs]
-        images_hr_save =  (images_hr + 1) / 2.0 * 255
-        images_hr_save = images_hr_save.type(torch.uint8)
-        images_lr_save =  (images_lr + 1) / 2.0 * 255
-        images_lr_save = images_lr_save.type(torch.uint8)
-        
-        print(images_lr_save.shape)
-        print(images_lr.shape)
+        for i in range(args.n_example_imgs//4):
+            try:
+                images_hr, images_lr = next(it_test)
+            except StopIteration:
+                iterloader = iter(dataloader_test)
+                images_hr, images_lr = next(iterloader)
+            images_lr = images_lr[0:4]
+            images_hr = images_hr[0:4]
+            images_hr_save =  (images_hr + 1) / 2.0 * 255
+            images_hr_save = images_hr_save.type(torch.uint8)
+            images_lr_save =  (images_lr + 1) / 2.0 * 255
+            images_lr_save = images_lr_save.type(torch.uint8)
+
+            print(images_lr_save.shape)
+            print(images_lr.shape)
 
     
     #load    
-    model = UNet_downscale(c_in = args.c_in, c_out = args.c_out,
-                           img_size = args.image_size,
-                           interp_mode=args.interp_mode, device=device).to(device)
-    #load the trained model
-    model.load_state_dict(torch.load('/scratch/users/mschillinger/Documents/DL-project/DDPM-dome272/models/NewTransform_NewSampling_fixed_s-10000_train-0.5/DDPM_downscale_wind_ns-linear__bs-15_e-801_lr-0.0001_cfg0.1_size64_shuffleTrue/ckpt.pt',
-                                     map_location='cpu')) ########### need to change the path
-    
-    diffusion = Diffusion(img_size=args.image_size, device=device, \
-        noise_steps=args.noise_steps, noise_schedule=args.noise_schedule)
-    sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 0) #cfg_scale
-    save_images(sampled_images, os.path.join("results", args.run_name, f"{epoch}_test_generated.jpg"))
-    save_images(images_lr_save, os.path.join("results", args.run_name, f"{epoch}_test_lowres.jpg"))
-    save_images(images_hr_save, os.path.join("results", args.run_name, f"{epoch}_test_truth.jpg"))
-    save_images(sampled_images, os.path.join("results", args.run_name, f"{epoch}_test_generated.jpg"))
+            
+            sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 0) #cfg_scale
+            for j in range(sampled_images.shape[0]):
+                save_images(sampled_images[j], os.path.join("Image_test_generated", f"{4*i+j}_test_generated.jpg"))
+                save_images(images_lr_save[j], os.path.join("Image_test_lowers", f"{4*i+j}_test_lowres.jpg"))
+                save_images(images_hr_save[j], os.path.join("Image_test_truth", f"{4*i+j}_test_truth.jpg"))
+    '''
+    # OPTION DATALOADER
+    if loading == "from_dataloader":
+        if args.dataset_size == 10000:# fixed random permutation in this case
+                with open('data_permutation', 'rb') as data_permutation_file:
+                    args.perm = pickle.load(data_permutation_file)
+
+            dataloader, dataloader_test = get_data(args)
+            it_test = iter(dataloader_test)
+            for i in range(args.n_example_imgs):
+                images_hr, images_lr = next(it_test)
+                images_lr = images_lr[0:4]
+                images_hr = images_hr[0:4]
+                images_hr_save =  (images_hr + 1) / 2.0 * 255
+                images_hr_save = images_hr_save.type(torch.uint8)
+                images_lr_save =  (images_lr + 1) / 2.0 * 255
+                images_lr_save = images_lr_save.type(torch.uint8)
+
+                print(images_lr_save.shape)
+                print(images_lr.shape)
+
+
+
+        #load    
+        model = UNet_downscale(c_in = args.c_in, c_out = args.c_out,
+                               img_size = args.image_size,
+                               interp_mode=args.interp_mode, device=device).to(device)
+        #load the trained model
+        model.load_state_dict(torch.load('.\ckpt.pt',
+                                         map_location='cuda')) ########### need to change the path
+
+        diffusion = Diffusion(img_size=args.image_size, device=device, \
+            noise_steps=args.noise_steps, noise_schedule=args.noise_schedule)
+        sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 0) #cfg_scale
+        print(sampled_images.shape)
+        for j in range(sampled_images.shape[0]):
+            save_images(sampled_images[j], os.path.join("Image_test_generated", f"{4*i+j}_test_generated.jpg"))
+            save_images(images_lr_save[j], os.path.join("Image_test_lowers", f"{4*i+j}_test_lowres.jpg"))
+            save_images(images_hr_save[j], os.path.join("Image_test_truth", f"{4*i+j}_test_truth.jpg"))'''
 
 
 if __name__ == '__main__':
-    load_model(loading = "directly")
-    
+    load_model(loading = "from_dataloader")
