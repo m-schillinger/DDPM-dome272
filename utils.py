@@ -20,7 +20,7 @@ import torch.nn.functional as F
 
 class DownscalingDataset(Dataset):
     def __init__(self, hr_dir, lr_dir,
-                 transform_hr=None, transform_lr=None, max_len=1e6):
+                 transform_hr=None, transform_lr=None, max_len=1e6, downsample_factor = 1):
         print(hr_dir)
         self.hr_dir = hr_dir
         self.lr_dir = lr_dir
@@ -28,6 +28,7 @@ class DownscalingDataset(Dataset):
         self.transform_lr = transform_lr
         self.max_t = (len(os.listdir(self.hr_dir)) - 2) * 2
         self.max_len = max_len
+        self.downsample_factor = downsample_factor
 
     def __len__(self):
         return np.min([len(os.listdir(self.hr_dir)), self.max_len])
@@ -46,6 +47,8 @@ class DownscalingDataset(Dataset):
         # mode ensures RGB values (i.e. only three channels, no alpha channel)
         image_hr = read_image(hr_path, mode = ImageReadMode(3)).float()
         image_lr = read_image(lr_path, mode = ImageReadMode(3)).float()
+        if self.downsample_factor > 1:
+            image_lr = image_lr[:, ::self.downsample_factor, ::self.downsample_factor]
         if self.transform_hr:
             image_hr = self.transform_hr(image_hr)
         if self.transform_lr:
@@ -54,12 +57,14 @@ class DownscalingDataset(Dataset):
 
 class DownscalingTemperatureDataset(Dataset):
     def __init__(self, hr_dir, lr_dir,
-                 transform_hr=None, transform_lr=None, max_len = 1e6):
+                 transform_hr=None, transform_lr=None, max_len = 1e6, downsample_factor = 1):
         self.hr_dir = hr_dir
         self.lr_dir = lr_dir
         self.transform_hr = transform_hr
         self.transform_lr = transform_lr
         self.max_len = max_len
+        self.downsample_factor = downsample_factor
+
 
     def __len__(self):
         return np.min([len(os.listdir(self.hr_dir)), self.max_len])
@@ -72,6 +77,8 @@ class DownscalingTemperatureDataset(Dataset):
         # mode ensures RGB values (i.e. only three channels, no alpha channel)
         image_hr = read_image(hr_path, mode = ImageReadMode(3)).float()
         image_lr = read_image(lr_path, mode = ImageReadMode(3)).float()
+        if self.downsample_factor > 1:
+            image_lr = image_lr[:, ::self.downsample_factor, ::self.downsample_factor]
         if self.transform_hr:
             image_hr = self.transform_hr(image_hr)
         if self.transform_lr:
@@ -130,10 +137,12 @@ def get_data(args):
                 T.CenterCrop((args.image_size // args.resolution_ratio, args.image_size // args.resolution_ratio)),
                 T.Normalize((norm, norm, norm), (norm, norm, norm))
                 ])
+        downsample_factor = args.resolution_ratio // 4
         dataset = DownscalingTemperatureDataset(args.dataset_path_hr, args.dataset_path_lr,
                                                 max_len = args.dataset_size,
                                                 transform_hr = transform_hr,
-                                                transform_lr = transform_lr)
+                                                transform_lr = transform_lr,
+                                                downsample_factor = downsample_factor)
     elif args.dataset_type == "wind":
         norm = 255 / 2.0
         if args.image_size > 64:
@@ -154,10 +163,12 @@ def get_data(args):
                 T.CenterCrop((args.image_size // args.resolution_ratio, args.image_size // args.resolution_ratio)),
                 T.Normalize((norm, norm, norm), (norm, norm, norm))
                 ])
+        downsample_factor = args.resolution_ratio // 4
         dataset = DownscalingDataset(args.dataset_path_hr, args.dataset_path_lr,
                                      max_len = args.dataset_size,
                                      transform_hr = transform_hr,
-                                     transform_lr = transform_lr)
+                                     transform_lr = transform_lr,
+                                     downsample_factor = downsample_factor)
     elif args.dataset_type == "MNIST":
         # currently only implemented for sizes 32 and 8
         dataset = DownscalingMNIST(args.dataset_path, max_len = args.dataset_size)
