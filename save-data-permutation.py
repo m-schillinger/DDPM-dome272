@@ -11,10 +11,11 @@ import pickle
 import numpy as np
  
 dataset_size = 10000
-data_permutation = np.random.permutation(np.arange(0, dataset_size,1))
+# data_permutation = np.random.permutation(np.arange(0, dataset_size,1))
 # Step 2
-with open('data_permutation', 'wb') as data_permutation_file:
-    pickle.dump(data_permutation, data_permutation_file)
+# with open('data_permutation', 'wb') as data_permutation_file:
+#    pass
+    # pickle.dump(data_permutation, data_permutation_file)
 
 # Step 2
 with open('data_permutation', 'rb') as data_permutation_file: 

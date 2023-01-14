@@ -1,0 +1,293 @@
+Sender: LSF System <lsfadmin@eu-g3-049>
+Subject: Job 252790587: <downscale_wind_fixeddata> in cluster <euler> Exited
+
+Job <downscale_wind_fixeddata> was submitted from host <eu-login-06> by user <mschillinger> in cluster <euler> at Thu Jan 12 19:17:44 2023
+Job was executed on host(s) <eu-g3-049>, in queue <gpuhe.24h>, as user <mschillinger> in cluster <euler> at Thu Jan 12 19:18:10 2023
+</cluster/home/mschillinger> was used as the home directory.
+</cluster/home/mschillinger/DL-project/DDPM-dome272> was used as the working directory.
+Started at Thu Jan 12 19:18:10 2023
+Terminated at Thu Jan 12 19:18:12 2023
+Results reported at Thu Jan 12 19:18:12 2023
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+python ddpm_downscale.py --batch_size 15 --dataset_size 10000 --lr 0.0001 --noise_schedule linear --epochs 801 --dataset_type wind --cfg_proportion 0.1 --image_size 64 --shuffle True
+------------------------------------------------------------
+
+Exited with exit code 1.
+
+Resource usage summary:
+
+    CPU time :                                   0.20 sec.
+    Max Memory :                                 14 MB
+    Average Memory :                             -
+    Total Requested Memory :                     40000.00 MB
+    Delta Memory :                               39986.00 MB
+    Max Swap :                                   -
+    Max Processes :                              -
+    Max Threads :                                -
+    Run time :                                   12 sec.
+    Turnaround time :                            28 sec.
+
+The output (if any) follows:
+
+  File "ddpm_downscale.py", line 58
+    logging.info(f"Sampling {n} new images....")
+                                              ^
+SyntaxError: invalid syntax
+Sender: LSF System <lsfadmin@eu-g3-049>
+Subject: Job 252790667: <downscale_wind_fixeddata> in cluster <euler> Exited
+
+Job <downscale_wind_fixeddata> was submitted from host <eu-login-06> by user <mschillinger> in cluster <euler> at Thu Jan 12 19:20:45 2023
+Job was executed on host(s) <eu-g3-049>, in queue <gpuhe.24h>, as user <mschillinger> in cluster <euler> at Thu Jan 12 19:21:10 2023
+</cluster/home/mschillinger> was used as the home directory.
+</cluster/home/mschillinger/DL-project/DDPM-dome272> was used as the working directory.
+Started at Thu Jan 12 19:21:10 2023
+Terminated at Thu Jan 12 19:21:12 2023
+Results reported at Thu Jan 12 19:21:12 2023
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+python ddpm_downscale.py --batch_size 15 --dataset_size 10000 --lr 0.0001 --noise_schedule linear --epochs 801 --dataset_type wind --cfg_proportion 0.1 --image_size 64 --shuffle True
+------------------------------------------------------------
+
+Exited with exit code 1.
+
+Resource usage summary:
+
+    CPU time :                                   0.28 sec.
+    Max Memory :                                 13 MB
+    Average Memory :                             -
+    Total Requested Memory :                     40000.00 MB
+    Delta Memory :                               39987.00 MB
+    Max Swap :                                   -
+    Max Processes :                              -
+    Max Threads :                                -
+    Run time :                                   29 sec.
+    Turnaround time :                            27 sec.
+
+The output (if any) follows:
+
+  File "/cluster/home/mschillinger/DL-project/DDPM-dome272/ddpm_downscale.py", line 235
+    with open('data_permutation', 'rb') as data_permutation_file: 
+                                                                 ^
+SyntaxError: invalid non-printable character U+00A0
+Sender: LSF System <lsfadmin@eu-g3-049>
+Subject: Job 252790741: <downscale_wind_fixeddata> in cluster <euler> Exited
+
+Job <downscale_wind_fixeddata> was submitted from host <eu-login-06> by user <mschillinger> in cluster <euler> at Thu Jan 12 19:23:34 2023
+Job was executed on host(s) <eu-g3-049>, in queue <gpuhe.24h>, as user <mschillinger> in cluster <euler> at Thu Jan 12 19:23:40 2023
+</cluster/home/mschillinger> was used as the home directory.
+</cluster/home/mschillinger/DL-project/DDPM-dome272> was used as the working directory.
+Started at Thu Jan 12 19:23:40 2023
+Terminated at Thu Jan 12 19:23:42 2023
+Results reported at Thu Jan 12 19:23:42 2023
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+python ddpm_downscale.py --batch_size 15 --dataset_size 10000 --lr 0.0001 --noise_schedule linear --epochs 801 --dataset_type wind --cfg_proportion 0.1 --image_size 64 --shuffle True
+------------------------------------------------------------
+
+Exited with exit code 1.
+
+Resource usage summary:
+
+    CPU time :                                   0.27 sec.
+    Max Memory :                                 13 MB
+    Average Memory :                             -
+    Total Requested Memory :                     40000.00 MB
+    Delta Memory :                               39987.00 MB
+    Max Swap :                                   -
+    Max Processes :                              -
+    Max Threads :                                -
+    Run time :                                   29 sec.
+    Turnaround time :                            8 sec.
+
+The output (if any) follows:
+
+  File "/cluster/home/mschillinger/DL-project/DDPM-dome272/ddpm_downscale.py", line 235
+    with open('data_permutation', 'rb') as data_permutation_file: 
+                                                                 ^
+SyntaxError: invalid non-printable character U+00A0
+Sender: LSF System <lsfadmin@eu-g3-049>
+Subject: Job 252790781: <downscale_wind_fixeddata> in cluster <euler> Exited
+
+Job <downscale_wind_fixeddata> was submitted from host <eu-login-06> by user <mschillinger> in cluster <euler> at Thu Jan 12 19:26:33 2023
+Job was executed on host(s) <eu-g3-049>, in queue <gpuhe.24h>, as user <mschillinger> in cluster <euler> at Thu Jan 12 19:26:40 2023
+</cluster/home/mschillinger> was used as the home directory.
+</cluster/home/mschillinger/DL-project/DDPM-dome272> was used as the working directory.
+Started at Thu Jan 12 19:26:40 2023
+Terminated at Thu Jan 12 19:26:47 2023
+Results reported at Thu Jan 12 19:26:47 2023
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+python ddpm_downscale.py --batch_size 15 --dataset_size 10000 --lr 0.0001 --noise_schedule linear --epochs 801 --dataset_type wind --cfg_proportion 0.1 --image_size 64 --shuffle True
+------------------------------------------------------------
+
+Exited with exit code 1.
+
+Resource usage summary:
+
+    CPU time :                                   3.47 sec.
+    Max Memory :                                 240 MB
+    Average Memory :                             156.00 MB
+    Total Requested Memory :                     40000.00 MB
+    Delta Memory :                               39760.00 MB
+    Max Swap :                                   -
+    Max Processes :                              3
+    Max Threads :                                4
+    Run time :                                   30 sec.
+    Turnaround time :                            14 sec.
+
+The output (if any) follows:
+
+/cluster/work/math/climate-downscaling/WiSoSuper_data/train/wind/middle_patch/HR
+Traceback (most recent call last):
+  File "/cluster/home/mschillinger/DL-project/DDPM-dome272/ddpm_downscale.py", line 246, in <module>
+    launch()
+  File "/cluster/home/mschillinger/DL-project/DDPM-dome272/ddpm_downscale.py", line 241, in launch
+    train(args)
+  File "/cluster/home/mschillinger/DL-project/DDPM-dome272/ddpm_downscale.py", line 89, in train
+    with open('models' + args.run_name + 'dataloader_train', 'wb') as dataloader_train_file:
+FileNotFoundError: [Errno 2] No such file or directory: 'modelsNewTransform_NewSampling_fixed_s-10000_train-0.5/DDPM_downscale_wind_ns-linear__bs-15_e-801_lr-0.0001_cfg0.1_size64_shuffleTruedataloader_train'
+Sender: LSF System <lsfadmin@eu-g3-049>
+Subject: Job 252790815: <downscale_wind_fixeddata> in cluster <euler> Exited
+
+Job <downscale_wind_fixeddata> was submitted from host <eu-login-06> by user <mschillinger> in cluster <euler> at Thu Jan 12 19:28:02 2023
+Job was executed on host(s) <eu-g3-049>, in queue <gpuhe.24h>, as user <mschillinger> in cluster <euler> at Thu Jan 12 19:28:11 2023
+</cluster/home/mschillinger> was used as the home directory.
+</cluster/home/mschillinger/DL-project/DDPM-dome272> was used as the working directory.
+Started at Thu Jan 12 19:28:11 2023
+Terminated at Thu Jan 12 19:28:25 2023
+Results reported at Thu Jan 12 19:28:25 2023
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+python ddpm_downscale.py --batch_size 15 --dataset_size 10000 --lr 0.0001 --noise_schedule linear --epochs 801 --dataset_type wind --cfg_proportion 0.1 --image_size 64 --shuffle True
+------------------------------------------------------------
+
+Exited with exit code 1.
+
+Resource usage summary:
+
+    CPU time :                                   10.65 sec.
+    Max Memory :                                 3566 MB
+    Average Memory :                             149.00 MB
+    Total Requested Memory :                     40000.00 MB
+    Delta Memory :                               36434.00 MB
+    Max Swap :                                   -
+    Max Processes :                              3
+    Max Threads :                                5
+    Run time :                                   37 sec.
+    Turnaround time :                            23 sec.
+
+The output (if any) follows:
+
+07:28:24 - INFO: Starting epoch 0:
+/cluster/work/math/climate-downscaling/WiSoSuper_data/train/wind/middle_patch/HR
+  0%|          | 0/246 [00:00<?, ?it/s]  0%|          | 0/246 [00:00<?, ?it/s]
+Traceback (most recent call last):
+  File "/cluster/home/mschillinger/DL-project/DDPM-dome272/ddpm_downscale.py", line 242, in <module>
+    launch()
+  File "/cluster/home/mschillinger/DL-project/DDPM-dome272/ddpm_downscale.py", line 237, in launch
+    train(args)
+  File "/cluster/home/mschillinger/DL-project/DDPM-dome272/ddpm_downscale.py", line 104, in train
+    for i, (images_hr, images_lr) in enumerate(pbar):
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.10.4/x86_64/lib64/python3.10/site-packages/tqdm/std.py", line 1195, in __iter__
+    for obj in iterable:
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.10.4/x86_64/lib64/python3.10/site-packages/torch/utils/data/dataloader.py", line 530, in __next__
+    data = self._next_data()
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.10.4/x86_64/lib64/python3.10/site-packages/torch/utils/data/dataloader.py", line 570, in _next_data
+    data = self._dataset_fetcher.fetch(index)  # may raise StopIteration
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.10.4/x86_64/lib64/python3.10/site-packages/torch/utils/data/_utils/fetch.py", line 49, in fetch
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.10.4/x86_64/lib64/python3.10/site-packages/torch/utils/data/_utils/fetch.py", line 49, in <listcomp>
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.10.4/x86_64/lib64/python3.10/site-packages/torch/utils/data/dataset.py", line 471, in __getitem__
+    return self.dataset[self.indices[idx]]
+  File "/cluster/home/mschillinger/DL-project/DDPM-dome272/utils.py", line 47, in __getitem__
+    image_hr = read_image(hr_path, mode = ImageReadMode(3)).float()
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.10.4/x86_64/lib64/python3.10/site-packages/torchvision/io/image.py", line 245, in read_image
+    data = read_file(path)
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.10.4/x86_64/lib64/python3.10/site-packages/torchvision/io/image.py", line 47, in read_file
+    data = torch.ops.image.read_file(path)
+RuntimeError: [Errno 2] No such file or directory: '/cluster/work/math/climate-downscaling/WiSoSuper_data/train/wind/middle_patch/HR/va_21888.png'
+Sender: LSF System <lsfadmin@eu-g3-049>
+Subject: Job 252790948: <downscale_wind_fixeddata> in cluster <euler> Exited
+
+Job <downscale_wind_fixeddata> was submitted from host <eu-login-06> by user <mschillinger> in cluster <euler> at Thu Jan 12 19:35:43 2023
+Job was executed on host(s) <eu-g3-049>, in queue <gpuhe.24h>, as user <mschillinger> in cluster <euler> at Thu Jan 12 19:36:11 2023
+</cluster/home/mschillinger> was used as the home directory.
+</cluster/home/mschillinger/DL-project/DDPM-dome272> was used as the working directory.
+Started at Thu Jan 12 19:36:11 2023
+Terminated at Thu Jan 12 19:36:26 2023
+Results reported at Thu Jan 12 19:36:26 2023
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+python ddpm_downscale.py --batch_size 15 --dataset_size 10000 --lr 0.0001 --noise_schedule linear --epochs 801 --dataset_type wind --cfg_proportion 0.1 --image_size 64 --shuffle True
+------------------------------------------------------------
+
+Exited with exit code 1.
+
+Resource usage summary:
+
+    CPU time :                                   10.49 sec.
+    Max Memory :                                 3525 MB
+    Average Memory :                             165.00 MB
+    Total Requested Memory :                     40000.00 MB
+    Delta Memory :                               36475.00 MB
+    Max Swap :                                   -
+    Max Processes :                              3
+    Max Threads :                                5
+    Run time :                                   28 sec.
+    Turnaround time :                            43 sec.
+
+The output (if any) follows:
+
+07:36:24 - INFO: Starting epoch 0:
+/cluster/work/math/climate-downscaling/WiSoSuper_data/train/wind/middle_patch/HR
+3681
+[2711 7977 3539 ... 5547 5945 8752]
+3681
+6319
+  0%|          | 0/246 [00:00<?, ?it/s]  0%|          | 0/246 [00:00<?, ?it/s]
+Traceback (most recent call last):
+  File "/cluster/home/mschillinger/DL-project/DDPM-dome272/ddpm_downscale.py", line 242, in <module>
+    launch()
+  File "/cluster/home/mschillinger/DL-project/DDPM-dome272/ddpm_downscale.py", line 237, in launch
+    train(args)
+  File "/cluster/home/mschillinger/DL-project/DDPM-dome272/ddpm_downscale.py", line 104, in train
+    for i, (images_hr, images_lr) in enumerate(pbar):
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.10.4/x86_64/lib64/python3.10/site-packages/tqdm/std.py", line 1195, in __iter__
+    for obj in iterable:
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.10.4/x86_64/lib64/python3.10/site-packages/torch/utils/data/dataloader.py", line 530, in __next__
+    data = self._next_data()
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.10.4/x86_64/lib64/python3.10/site-packages/torch/utils/data/dataloader.py", line 570, in _next_data
+    data = self._dataset_fetcher.fetch(index)  # may raise StopIteration
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.10.4/x86_64/lib64/python3.10/site-packages/torch/utils/data/_utils/fetch.py", line 49, in fetch
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.10.4/x86_64/lib64/python3.10/site-packages/torch/utils/data/_utils/fetch.py", line 49, in <listcomp>
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.10.4/x86_64/lib64/python3.10/site-packages/torch/utils/data/dataset.py", line 471, in __getitem__
+    return self.dataset[self.indices[idx]]
+  File "/cluster/home/mschillinger/DL-project/DDPM-dome272/utils.py", line 47, in __getitem__
+    image_hr = read_image(hr_path, mode = ImageReadMode(3)).float()
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.10.4/x86_64/lib64/python3.10/site-packages/torchvision/io/image.py", line 245, in read_image
+    data = read_file(path)
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.10.4/x86_64/lib64/python3.10/site-packages/torchvision/io/image.py", line 47, in read_file
+    data = torch.ops.image.read_file(path)
+RuntimeError: [Errno 2] No such file or directory: '/cluster/work/math/climate-downscaling/WiSoSuper_data/train/wind/middle_patch/HR/va_18256.png'
