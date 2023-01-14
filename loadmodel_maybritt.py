@@ -59,7 +59,7 @@ def load_model(loading = "directly"):
                                    img_size = args.image_size,
                                    interp_mode=args.interp_mode, device=device).to(device)
             #load the trained model
-    model.load_state_dict(torch.load('models/DDPM_downscale_v1_randomdata/ckpt.pt',
+    model.load_state_dict(torch.load('models/DDPM_downscale_v2_fixeddata/ckpt.pt',
                                              map_location='cuda')) ########### need to change the path
 
     diffusion = Diffusion(img_size=args.image_size, device=device, \
@@ -90,7 +90,9 @@ def load_model(loading = "directly"):
 
     if loading == "from_dataloader":
         if args.dataset_size == 10000:# fixed random permutation in this case
-                args.perm = np.arange(1, 10000)
+                # args.perm = np.arange(1, 10000)
+                with open('data_permutation', 'rb') as data_permutation_file:
+                    args.perm = pickle.load(data_permutation_file)
         dataloader, dataloader_test = get_data(args)
         it_test = iter(dataloader_test)
         for i in range(args.n_example_imgs//4):
@@ -112,13 +114,13 @@ def load_model(loading = "directly"):
 
             sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 0) #cfg_scale
             for j in range(sampled_images.shape[0]):
-                filename = os.path.join("Testing_v1_randomdata/Image_test_generated", f"{4*i+j}_test_generated.jpg")
+                filename = os.path.join("Testing_v2_fixeddata/Image_test_generated", f"{4*i+j}_test_generated.jpg")
                 os.makedirs(os.path.dirname(filename), exist_ok=True)
                 save_images(sampled_images[j], filename)
-                filename = os.path.join("Testing_v1_randomdata/Image_test_lowers", f"{4*i+j}_test_lowres.jpg")
+                filename = os.path.join("Testing_v2_fixeddata/Image_test_lowers", f"{4*i+j}_test_lowres.jpg")
                 os.makedirs(os.path.dirname(filename), exist_ok=True)
                 save_images(images_lr_save[j], filename)
-                filename = os.path.join("Testing_v1_randomdata/Image_test_truth", f"{4*i+j}_test_truth.jpg")
+                filename = os.path.join("Testing_v2_fixeddata/Image_test_truth", f"{4*i+j}_test_truth.jpg")
                 os.makedirs(os.path.dirname(filename), exist_ok=True)
                 save_images(images_hr_save[j], filename)
     '''
