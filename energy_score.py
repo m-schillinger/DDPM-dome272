@@ -20,9 +20,18 @@ import torchvision.transforms as T
 import torch.nn.functional as F
 import pickle
 from ddpm_downscale import *
+import torch.linalg as LA
+
+def dist(x, y):
+    # take matrix norm and sum across channel dimension
+    # output will be a tensor of length x.shape[0]
+    return torch.sum(LA.matrix_norm(x - y), dim = 1)
+
+def energy_score(sample1, sample2, truth):
+    return dist(sample1, truth) - 0.5 * dist(sample1, sample2)
 
 
-def load_model(loading = "directly"):
+def calculate_scores(loading = "directly"):
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--batch_size', type=int, required=False, default = 4)
@@ -46,15 +55,17 @@ def load_model(loading = "directly"):
 
     args.dataset_path_hr = "/cluster/work/math/climate-downscaling/WiSoSuper_data/train/wind/middle_patch/HR"
     args.dataset_path_lr = "/cluster/work/math/climate-downscaling/WiSoSuper_data/train/wind/middle_patch/LR"
+
     # args.dataset_path_hr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch/HR"
     # args.dataset_path_lr = "/scratch/users/mschillinger/Documents/DL-project/WiSoSuper/train/wind/middle_patch/LR"
 
     args.c_in = 6
     args.c_out = 3
     args.image_size = 64
+    # device = 'cpu' # to do: change
     device = 'cuda' # to do: change
     args.device = device
-    args.n_example_imgs = 2000
+    args.n_example_imgs = 100
     args.dataset_size == 10000
     args.noise_steps = 750
 
@@ -68,29 +79,6 @@ def load_model(loading = "directly"):
     diffusion = Diffusion(img_size=args.image_size, device=device, \
                 noise_steps=args.noise_steps, noise_schedule=args.noise_schedule)
 
-    # OPTION DIRECTLY
-    if loading == "directly":
-        files = os.listdir(args.dataset_path_lr)
-        first_file = files[0]
-
-        path =  os.path.join(args.dataset_path_lr, first_file)
-        images_lr = read_image(path, mode = ImageReadMode(3)).unsqueeze(0)
-        for i in range(args.n_example_imgs):
-            file = files[i + 1]
-            path =  os.path.join(args.dataset_path_lr, file)
-            img = read_image(path, mode = ImageReadMode(3)).unsqueeze(0)
-            images_lr = torch.cat([images_lr, img], dim=0)
-
-        norm = 255 / 2.0
-        transform_lr = T.Compose([
-            T.CenterCrop((args.image_size // args.resolution_ratio, args.image_size // args.resolution_ratio)),
-            T.Normalize((norm, norm, norm), (norm, norm, norm))
-            ])
-        images_lr_save = images_lr
-        images_lr = transform_lr(images_lr.float())
-        print(images_lr_save.shape)
-        print(images_lr.shape)
-
     if loading == "from_dataloader":
         if args.dataset_size == 10000:# fixed random permutation in this case
                 # args.perm = np.arange(1, 10000)
@@ -98,6 +86,8 @@ def load_model(loading = "directly"):
                     args.perm = pickle.load(data_permutation_file)
         dataloader, dataloader_test = get_data(args)
         it_test = iter(dataloader_test)
+
+        scores = np.zeros(args.n_example_imgs//4)
         for i in range(args.n_example_imgs//4):
             try:
                 images_hr, images_lr = next(it_test)
@@ -119,19 +109,40 @@ def load_model(loading = "directly"):
     #load
 
             sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 0) #cfg_scale
+            sampled_images2 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 0) #cfg_scale
+            print("shape and type")
+            print(sampled_images.shape)
+            print(sampled_images.type())
+            print(images_hr.shape)
+            print(images_hr.type())
+            print(sampled_images.float().type())
+            print(images_hr.float().type())
+            scores[i] = energy_score(sampled_images.float().to("cpu"),
+                sampled_images2.float().to("cpu"),
+                images_hr.float().to("cpu"))
+            filename = os.path.join("EnergyScoreTesting_" + args.folder_name + "/Scores", f"{i}_energy_score.pt")
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
+            torch.save(scores, filename)
+
             for j in range(sampled_images.shape[0]):
-                filename = os.path.join("Testing_" + args.folder_name + "/Image_test_generated", f"{4*i+j}_test_generated.jpg")
+                filename = os.path.join("EnergyScoreTesting_" + args.folder_name + "/Image_test_generated", f"{4*i+j}_test_generated.jpg")
                 os.makedirs(os.path.dirname(filename), exist_ok=True)
                 save_images(sampled_images[j], filename)
-                filename = os.path.join("Testing_" + args.folder_name + "/Image_test_lowers", f"{4*i+j}_test_lowres.jpg")
+                filename = os.path.join("Testing_" + args.folder_name + "/Image_test_generated", f"{4*i+j}_test_generated2.jpg")
+                save_images(sampled_images2[j], filename)
+
+                filename = os.path.join("EnergyScoreTesting_" + args.folder_name + "/Image_test_lowers", f"{4*i+j}_test_lowres.jpg")
                 os.makedirs(os.path.dirname(filename), exist_ok=True)
                 save_images(images_lr_save[j], filename)
-                filename = os.path.join("Testing_" + args.folder_name + "/Image_test_truth", f"{4*i+j}_test_truth.jpg")
+                filename = os.path.join("EnergyScoreTesting_" + args.folder_name + "/Image_test_truth", f"{4*i+j}_test_truth.jpg")
                 os.makedirs(os.path.dirname(filename), exist_ok=True)
                 save_images(images_hr_save[j], filename)
-                filename = os.path.join("Testing_" + args.folder_name + "/Image_test_bicubic", f"{4*i+j}_test_bicubic.jpg")
+                filename = os.path.join("EnergyScoreTesting_" + args.folder_name + "/Image_test_bicubic", f"{4*i+j}_test_bicubic.jpg")
                 os.makedirs(os.path.dirname(filename), exist_ok=True)
                 save_images(images_bicubic_save[j], filename)
 
+    return scores
+
+
 if __name__ == '__main__':
-    load_model(loading = "from_dataloader")
+    scores = calculate_scores(loading = "from_dataloader")
