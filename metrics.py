@@ -28,6 +28,17 @@ def read_image(folder):
     dimension=(images[0].shape[0], images[0].shape[1])
     return images, size, dimension
 
+def split_and_average(img):
+    img_red = img[:,:,2]
+    img_green = img[:,:,1]
+    img_blue = img[:,:,0]
+
+    img_avg = np.zeros(img_red.shape)
+    for i in range(img.shape[0]):
+        for j in range(img.shape[1]):
+            img_avg[i][j] = (img_red[i][j].astype(float)+img_green[i][j].astype(float)+img_blue[i][j].astype(float))/3
+    return img_avg
+
 
 def psnr(imageA, imageB):
     mse = np.mean((imageA.astype("float") - imageB.astype("float")) ** 2)
