@@ -18,10 +18,19 @@ import pickle
 
 logging.basicConfig(format="%(asctime)s - %(levelname)s: %(message)s", level=logging.INFO, datefmt="%I:%M:%S")
 
-
 class Diffusion:
+    '''Diffusion model class.'''
     def __init__(self, noise_steps=1000, noise_schedule = "linear", \
     beta_start=1e-4, beta_end=0.02, img_size=256, device="cuda"):
+        '''init function.
+        Parameters:
+            noise_steps: Number of denoising steps.
+            noise_schedule: linear or cosine
+            beta_start: Start noising level
+            beta_end: End noising level
+            img_size: Size of HR image
+            device: Pytorch device
+        '''
         self.noise_steps = noise_steps
         self.beta_start = beta_start
         self.beta_end = beta_end
@@ -46,15 +55,25 @@ class Diffusion:
             return torch.clip(betat, 0.0001, 0.9999)
 
     def noise_images(self, x, t):
+        '''Function to noise target image x depending on timestep t.'''
         sqrt_alpha_hat = torch.sqrt(self.alpha_hat[t])[:, None, None, None]
         sqrt_one_minus_alpha_hat = torch.sqrt(1 - self.alpha_hat[t])[:, None, None, None]
         eps = torch.randn_like(x)
         return sqrt_alpha_hat * x + sqrt_one_minus_alpha_hat * eps, eps
 
     def sample_timesteps(self, n):
+        '''Sample random timestep.'''
         return torch.randint(low=1, high=self.noise_steps, size=(n,))
 
     def sample(self, model, n, images_lr, c_in = 3, cfg_scale=0):
+        '''Sample new images.
+        Parameters:
+            model: model to use for prediction
+            n: number of new images
+            images_lr: LR images to downscale
+            c_in: number of input channels (default 3, only for HR image)
+            cfg_scale: scale according to CFG
+        '''
         logging.info(f"Sampling {n} new images....")
         model.eval()
         with torch.no_grad():
@@ -62,6 +81,7 @@ class Diffusion:
             images_lr = images_lr.to(self.device)
             for i in tqdm(reversed(range(1, self.noise_steps)), position=0):
                 t = (torch.ones(n) * i).long().to(self.device)
+                # crucial step: predict noise with given model, conditioned on LR images
                 predicted_noise = model(x, t, images_lr)
                 if cfg_scale > 0:
                     uncond_predicted_noise = model(x, t, None)
@@ -73,16 +93,17 @@ class Diffusion:
                     noise = torch.randn_like(x)
                 else:
                     noise = torch.zeros_like(x)
+                # one denoising step on noisy x
                 x = 1 / torch.sqrt(alpha) * (x - ((1 - alpha) / (torch.sqrt(1 - alpha_hat))) * predicted_noise) + torch.sqrt(beta) * noise
-                # save intermediate results
-                # To do
         model.train()
+        # convert x back to 0-255 range
         x = (x.clamp(-1, 1) + 1) / 2
         x = (x * 255).type(torch.uint8)
         return x
 
 
 def train(args):
+    '''training function.'''
     setup_logging(args.run_name)
     device = args.device
     dataloader, dataloader_test = get_data(args)
@@ -95,8 +116,6 @@ def train(args):
         noise_steps=args.noise_steps, noise_schedule=args.noise_schedule)
     logger = SummaryWriter(os.path.join("runs", args.run_name))
     l = len(dataloader)
-    ema = EMA(0.995)
-    ema_model = copy.deepcopy(model).eval().requires_grad_(False)
 
     for epoch in range(args.epochs):
         logging.info(f"Starting epoch {epoch}:")
@@ -114,16 +133,15 @@ def train(args):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            # ema.step_ema(ema_model, model)
 
             pbar.set_postfix(MSE=loss.item())
             logger.add_scalar("MSE", loss.item(), global_step=epoch * l + i)
 
         if epoch % 50 == 0:
-            # labels = torch.arange(10).long().to(device)
-            # generate some random low-res images
+            # save intermediate results
+            # generate some sample images
             if args.dataset_type == "wind" or args.dataset_type == "temperature":
-                # alternative version: sample only from training data
+                # sample some images from training data
                 it = iter(dataloader)
                 images_hr, images_lr = next(it)
                 images_lr = images_lr[0:args.n_example_imgs]
@@ -139,13 +157,7 @@ def train(args):
                 save_images(sampled_images, os.path.join("results", args.run_name, f"{epoch}_generated.jpg"))
                 torch.save(sampled_images, os.path.join("results", args.run_name, f"{epoch}_tensor.pt"))
 
-                # sampled_images_cfg1 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr_transformed, cfg_scale = 0.1)
-                # sampled_images_cfg2 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr_transformed, cfg_scale = 3)
-                # ema_sampled_images = diffusion.sample(ema_model, n=len(images_lr), images_lr=images_lr_transformed)
-                # save_images(sampled_images_cfg1, os.path.join("results", args.run_name, f"{epoch}_cfg0-1.jpg"))
-                # save_images(sampled_images_cfg2, os.path.join("results", args.run_name, f"{epoch}_cfg3.jpg"))
-                # save_images(ema_sampled_images, os.path.join("results", args.run_name, f"{epoch}_ema.jpg"))
-
+                # sample some images from test data
                 it_test = iter(dataloader_test)
                 images_hr, images_lr = next(it_test)
                 images_lr = images_lr[0:args.n_example_imgs]
@@ -178,7 +190,6 @@ def train(args):
                 torch.save(sampled_images, os.path.join("results", args.run_name, f"{epoch}_tensor.pt"))
 
             torch.save(model.state_dict(), os.path.join("models", args.run_name, f"ckpt.pt"))
-            # torch.save(ema_model.state_dict(), os.path.join("models", args.run_name, f"ema_ckpt.pt"))
             torch.save(optimizer.state_dict(), os.path.join("models", args.run_name, f"optim.pt"))
 
 
@@ -189,12 +200,12 @@ def launch():
     parser.add_argument('--dataset_size', type=int, required=False, default = 10000)
     parser.add_argument('--noise_schedule', type=str, required=False, default = "linear")
     parser.add_argument('--epochs', type=int, required=False, default = 500)
-    parser.add_argument('--lr', type=float, required=False, default = 0.0)
+    parser.add_argument('--lr', type=float, required=False, default = 0.0) # learning rate
     parser.add_argument('--dataset_type', type=str, required=False, default = "wind")
     parser.add_argument('--repeat_observations', type=int, required=False, default = 1)
     parser.add_argument('--cfg_proportion', type=float, required=False, default = 0)
     parser.add_argument('--image_size', type=int, required=False, default = None)
-    parser.add_argument('--shuffle', type=bool, required=False, default = False)
+    parser.add_argument('--shuffle', type=bool, required=False, default = True)
     parser.add_argument('--resolution_ratio', type=int, required=False, default = 4)
 
     args = parser.parse_args()
@@ -238,14 +249,4 @@ def launch():
 
 
 if __name__ == '__main__':
-    # pass
     launch()
-    # device = "cuda"
-    # model = UNet_conditional(num_classes=10).to(device)
-    # ckpt = torch.load("./models/DDPM_conditional/ckpt.pt")
-    # model.load_state_dict(ckpt)
-    # diffusion = Diffusion(img_size=64, device=device)
-    # n = 8
-    # y = torch.Tensor([6] * n).long().to(device)
-    # x = diffusion.sample(model, n, y, le=0)
-    # plot_images(x)

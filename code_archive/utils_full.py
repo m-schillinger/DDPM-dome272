@@ -146,8 +146,6 @@ def save_images(images, path, **kwargs):
 
 
 def get_data(args):
-    '''Helper function to create dataloaders depending on arguments.
-    Returns two dataloaders: one for train, one for test data.'''
     if args.dataset_type == "temperature":
         norm = 255 / 2.0
         if args.image_size > 64:
@@ -207,12 +205,27 @@ def get_data(args):
         dataset = Subset(dataset, np.tile(np.arange(len(dataset)), args.repeat_observations))
 
     n_train = int(np.floor(len(dataset) / args.proportion_train))
+    print(n_train)
+    print(args.perm)
     dataset_train = Subset(dataset, args.perm[0:n_train])
     dataset_test = Subset(dataset, args.perm[n_train:])
+    print(len(dataset_train))
+    print(len(dataset_test))
 
     dataloader_train = DataLoader(dataset_train, args.batch_size, shuffle=args.shuffle)
     dataloader_test = DataLoader(dataset_test, args.batch_size, shuffle=args.shuffle)
     return dataloader_train, dataloader_test
+
+def get_data_simple(args):
+    transforms = torchvision.transforms.Compose([
+        torchvision.transforms.Resize(80),  # args.image_size + 1/4 *args.image_size
+        torchvision.transforms.RandomResizedCrop(args.image_size, scale=(0.8, 1.0)),
+        torchvision.transforms.ToTensor(),
+        torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ])
+    dataset = torchvision.datasets.ImageFolder(args.dataset_path, transform=transforms)
+    dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
+    return dataloader
 
 def setup_logging(run_name):
     os.makedirs("models", exist_ok=True)
