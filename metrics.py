@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#main.py --model=phiregan --mode=train --data_dir=C:\Users\yuduf\Downloads\WiSoSuper-main\WiSoSuper-main\PhIREGAN\wind_tfrecords\wind_tfrecords --data_type=wind
 import os
 import math
 import numpy as np
