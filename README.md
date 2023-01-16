@@ -16,7 +16,7 @@ This is a simple implementation of diffusion models for downscaling climate data
 - epochs: number of epochs to run
 - lr: learning rate
 - dataset_type: wind, temperature or MNIST
-- repeat_observations:
+- repeat_observations: if set > 0, repeats each image in the dataset multiple times; can be used for simple test experiments, e.g. to see if the model can overfit a single image; not relevant for actual runs; default 1
 - cfg_proportion: proportion of training steps that are done unconditionally, i.e. be setting the LR input to zero - a value around 0.1 or 0.2  has shown to enhance performance; default 0
 - image_size: size of the HR image; default 64; can be set to smaller values to enable faster training
 - shuffle: defines the shuffle argument in pytorch's dataloader; True or False; default True
