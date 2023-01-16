@@ -65,7 +65,8 @@ def sample_multiple(loading = "directly"):
     # device = 'cpu' # to do: change
     device = 'cuda' # to do: change
     args.device = device
-    args.n_example_imgs = 100
+    args.n_example_imgs = 20
+    args.n_rep_lowres = 100
     args.dataset_size == 10000
     args.noise_steps = 750
 

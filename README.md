@@ -9,7 +9,10 @@ This is a simple implementation of diffusion models for downscaling climate data
 - generate_testsamples.py: File that was used for generating samples from the test data
 - data_permutation: Permutation of the images that defines the split into train and test data for the final results. Will be loaded automatically if the dataset_size is set to 10000.
 - data.ipnyb: Jupyter notebook to download and save the dataset
-- data.zip: Folder with both HR and LR images
+- Plotting.ipnyb: Helper notebook to plot result plots
+
+## Data
+You can download the wind data from [Google Drive](https://drive.google.com/file/d/1zLTmCfsZIl0Sb8FPS9oYPME0HOuFSt8u/view?usp=share_link)
 
 ## Overview on hyperparameters
 - batch_size: batch size; default 15
