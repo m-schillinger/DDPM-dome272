@@ -31,10 +31,10 @@ def energy_score(sample1, sample2, truth):
     return dist(sample1, truth) - 0.5 * dist(sample1, sample2)
 
 
-def calculate_scores(loading = "directly"):
+def sample_multiple(loading = "directly"):
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--batch_size', type=int, required=False, default = 4)
+    parser.add_argument('--batch_size', type=int, required=False, default = 1)
     parser.add_argument('--dataset_size', type=int, required=False, default = 10000)
     parser.add_argument('--noise_schedule', type=str, required=False, default = "linear")
     parser.add_argument('--epochs', type=int, required=False, default = 500)
@@ -87,15 +87,15 @@ def calculate_scores(loading = "directly"):
         dataloader, dataloader_test = get_data(args)
         it_test = iter(dataloader_test)
 
-        scores = np.zeros(args.n_example_imgs//4)
-        for i in range(args.n_example_imgs//4):
+        # scores = np.zeros(args.n_example_imgs)
+        for i in range(args.n_example_imgs):
             try:
                 images_hr, images_lr = next(it_test)
             except StopIteration:
                 iterloader = iter(dataloader_test)
                 images_hr, images_lr = next(iterloader)
-            images_lr = images_lr[0:4]
-            images_hr = images_hr[0:4]
+            images_lr = images_lr
+            images_hr = images_hr
             images_hr_save =  (images_hr + 1) / 2.0 * 255
             images_hr_save = images_hr_save.type(torch.uint8)
             images_lr_save =  (images_lr + 1) / 2.0 * 255
@@ -106,43 +106,32 @@ def calculate_scores(loading = "directly"):
             images_bicubic = images_bicubic.clamp(-1, 1)
             images_bicubic_save =  (images_bicubic + 1) / 2.0 * 255
             images_bicubic_save = images_bicubic_save.type(torch.uint8)
-    #load
 
-            sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 0) #cfg_scale
-            sampled_images2 = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 0) #cfg_scale
-            print("shape and type")
-            print(sampled_images.shape)
-            print(sampled_images.type())
-            print(images_hr.shape)
-            print(images_hr.type())
-            print(sampled_images.float().type())
-            print(images_hr.float().type())
-            scores[i] = energy_score(sampled_images.float().to("cpu"),
-                sampled_images2.float().to("cpu"),
-                images_hr.float().to("cpu"))
-            filename = os.path.join("EnergyScoreTesting_" + args.folder_name + "/Scores", f"{i}_energy_score.pt")
+            images_lr = images_lr[0].repeat(5, 1, 1, 1)
+            sampled_images = diffusion.sample(model, n=len(images_lr), images_lr = images_lr, cfg_scale = 0)
+            # scores[i] = energy_score(sampled_images.float().to("cpu"),
+            #    sampled_images2.float().to("cpu"),
+            #    images_hr.float().to("cpu"))
+            # filename = os.path.join("EnergyScoreTesting_" + args.folder_name + "/Scores", f"{i}_energy_score.pt")
+            # os.makedirs(os.path.dirname(filename), exist_ok=True)
+            # torch.save(scores, filename)
+
+            filename = os.path.join("EnergyScoreTesting_" + args.folder_name + "/Image_test_generated", f"{i}_test_generated.jpg")
             os.makedirs(os.path.dirname(filename), exist_ok=True)
-            torch.save(scores, filename)
-
-            for j in range(sampled_images.shape[0]):
-                filename = os.path.join("EnergyScoreTesting_" + args.folder_name + "/Image_test_generated", f"{4*i+j}_test_generated.jpg")
-                os.makedirs(os.path.dirname(filename), exist_ok=True)
-                save_images(sampled_images[j], filename)
-                filename = os.path.join("Testing_" + args.folder_name + "/Image_test_generated", f"{4*i+j}_test_generated2.jpg")
-                save_images(sampled_images2[j], filename)
-
-                filename = os.path.join("EnergyScoreTesting_" + args.folder_name + "/Image_test_lowers", f"{4*i+j}_test_lowres.jpg")
-                os.makedirs(os.path.dirname(filename), exist_ok=True)
-                save_images(images_lr_save[j], filename)
-                filename = os.path.join("EnergyScoreTesting_" + args.folder_name + "/Image_test_truth", f"{4*i+j}_test_truth.jpg")
-                os.makedirs(os.path.dirname(filename), exist_ok=True)
-                save_images(images_hr_save[j], filename)
-                filename = os.path.join("EnergyScoreTesting_" + args.folder_name + "/Image_test_bicubic", f"{4*i+j}_test_bicubic.jpg")
-                os.makedirs(os.path.dirname(filename), exist_ok=True)
-                save_images(images_bicubic_save[j], filename)
-
-    return scores
-
+            save_images(sampled_images, filename)
+            filename = os.path.join("EnergyScoreTesting_" + args.folder_name + "/Image_test_lowers", f"{i}_test_lowres.jpg")
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
+            save_images(images_lr_save, filename)
+            filename = os.path.join("EnergyScoreTesting_" + args.folder_name + "/Image_test_truth", f"{i}_test_truth.jpg")
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
+            save_images(images_hr_save, filename)
+            filename = os.path.join("EnergyScoreTesting_" + args.folder_name + "/Image_test_bicubic", f"{i}_test_bicubic.jpg")
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
+            save_images(images_bicubic_save, filename)
+            filename = os.path.join("EnergyScoreTesting_" + args.folder_name + "/Image_test_comparison", f"{i}_test_all.jpg")
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
+            all = torch.cat([images_bicubic_save.to("cpu"), images_hr_save.to("cpu"), sampled_images.to("cpu")], dim = 0)
+            save_images(all, filename)
 
 if __name__ == '__main__':
-    scores = calculate_scores(loading = "from_dataloader")
+    sample_multiple(loading = "from_dataloader")

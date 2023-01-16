@@ -1,55 +1,44 @@
 # Diffusion Models
-This is an easy-to-understand implementation of diffusion models within 100 lines of code. Different from other implementations, this code doesn't use the lower-bound formulation for sampling and strictly follows Algorithm 1 from the [DDPM](https://arxiv.org/pdf/2006.11239.pdf) paper, which makes it extremely short and easy to follow. There are two implementations: `conditional` and `unconditional`. Furthermore, the conditional code also implements Classifier-Free-Guidance (CFG) and Exponential-Moving-Average (EMA). Below you can find two explanation videos for the theory behind diffusion models and the implementation.
+This is a simple implementation of diffusion models for downscaling climate data. It is based on the implementation of diffusion models from [Dominic Rampas](https://github.com/dome272/Diffusion-Models-pytorch), and closely follows Algorithm 1 from the [DDPM](https://arxiv.org/pdf/2006.11239.pdf) paper. So far, it can be applied to both wind as well as temperature data.
 
-<a href="https://www.youtube.com/watch?v=HoKDTa5jHvg">
-   <img alt="Qries" src="https://user-images.githubusercontent.com/61938694/191407922-f613759e-4bea-4ac9-9135-d053a6312421.jpg"
-   width="300">
-</a>
+## Overview on files
+- ddpm_downscale.py: Main file used for the diffusion class and training the diffusion model
+- modules.py: Helper file that includes the components and the UNet model used
+- utils.py: Helper file for dataset classes, data loading and plotting / saving images
+- metrics.py: Metrics for evaluation
+- generate_testsamples.py: File that was used for generating samples from the test data
+- data_permutation: Permutation of the images that defines the split into train and test data for the final results. Will be loaded automatically if the dataset_size is set to 10000.
 
-<a href="https://www.youtube.com/watch?v=TBCRlnwJtZU">
-   <img alt="Qries" src="https://user-images.githubusercontent.com/61938694/191407849-6d0376c7-05b2-43cd-a75c-1280b0e33af1.png"
-   width="300">
-</a>
+## Overview on hyperparameters
+- batch_size: batch size; default 15
+- dataset_size: maximum size of dataset for both train and test images together; default is 10000 and the images are split into 5000 train and 5000 test images automatically using the data_permutation file; parameter can be set to smaller values to enable faster Training
+- noise_schedule: noise schedule in diffsion model, can be linear or cosine
+- epochs: number of epochs to run
+- lr: learning rate
+- dataset_type: wind, temperature or MNIST
+- repeat_observations:
+- cfg_proportion: proportion of training steps that are done unconditionally, i.e. be setting the LR input to zero - a value around 0.1 or 0.2  has shown to enhance performance; default 0
+- image_size: size of the HR image; default 64; can be set to smaller values to enable faster training
+- shuffle: defines the shuffle argument in pytorch's dataloader; True or False; default True
+- resolution_ratio: ratio of resolution HR image / LR image; default 4
 
+## Repeat experiments on wind data
+### Training
+1. (optional) Configure Hyperparameters in ```ddpm_downscale.py```; most hyperparameters can also be set via the command line (see below)
+2. Set path to dataset in ```ddpm_downscale.py```
+3. ```python ddpm_downscale.py```, optionally with more hyperparameters, e.g. ```python ddpm_downscale.py --image_size 32```
+
+### Command to reproduce results
+The results were generated as follows:
+- ```python ddpm_downscale.py --batch_size 15 --dataset_size 10000 --lr 0.0001 --noise_schedule linear --epochs 500 --dataset_type wind --cfg_proportion 0.1 --image_size 64 --shuffle True --resolution_ratio 4```
+- ```python ddpm_downscale.py --batch_size 15 --dataset_size 10000 --lr 0.0001 --noise_schedule linear --epochs 500 --dataset_type wind --cfg_proportion 0.1 --image_size 64 --shuffle True --resolution_ratio 8```
+- ```python ddpm_downscale.py --batch_size 15 --dataset_size 10000 --lr 0.0001 --noise_schedule linear --epochs 500 --dataset_type wind --cfg_proportion 0.1 --image_size 64 --shuffle True --resolution_ratio 16```
+
+### Sampling
+1. Download the checkpoints for the models [here](https://drive.google.com/drive/folders/18J1K70g4nIK_8SViRdr7kYJc7C0MdUrH?usp=share_link).
+- Choose DDPM_downscale_v2_fixeddata for the main model with a resolution ratio of 4. It performs downscaling from 16x16 to 64x64 images.
+- Choose DDPM_downscale_v3_fixeddata_resratio8 or DDPM_downscale_v4_fixeddata_resratio16 for the models with higher resolution ratio. The former performs downscaling for 8x8 -> 64x64 and the latter 4x4 -> 64x64.
+2. Set path to dataset in ```generate_testsamples.py```, optionally more hyperparameters.
+3. Generate testsamples with ```generate_testsamples.py```, e.g.
+```"python generate_testsamples.py --batch_size 4 --dataset_size 10000 --dataset_type wind --image_size 64 --shuffle True --folder_name v2_fixeddata```.
 <hr>
-
-## Train a Diffusion Model on your own data:
-### Unconditional Training
-1. (optional) Configure Hyperparameters in ```ddpm.py```
-2. Set path to dataset in ```ddpm.py```
-3. ```python ddpm.py```
-
-### Conditional Training
-1. (optional) Configure Hyperparameters in ```ddpm_conditional.py```
-2. Set path to dataset in ```ddpm_conditional.py```
-3. ```python ddpm_conditional.py```
-
-## Sampling
-The following examples show how to sample images using the models trained in the video on the [Landscape Dataset](https://www.kaggle.com/datasets/arnaud58/landscape-pictures). You can download the checkpoints for the models [here](https://drive.google.com/drive/folders/1beUSI-edO98i6J9pDR67BKGCfkzUL5DX?usp=sharing).
-### Unconditional Model
-```python
-    device = "cuda"
-    model = UNet().to(device)
-    ckpt = torch.load("unconditional_ckpt.pt")
-    model.load_state_dict(ckpt)
-    diffusion = Diffusion(img_size=64, device=device)
-    x = diffusion.sample(model, n=16)
-    plot_images(x)
-```
-
-### Conditional Model
-This model was trained on [CIFAR-10 64x64](https://www.kaggle.com/datasets/joaopauloschuler/cifar10-64x64-resized-via-cai-super-resolution) with 10 classes ```airplane:0, auto:1, bird:2, cat:3, deer:4, dog:5, frog:6, horse:7, ship:8, truck:9```
-```python
-    n = 10
-    device = "cuda"
-    model = UNet_conditional(num_classes=10).to(device)
-    ckpt = torch.load("conditional_ema_ckpt.pt")
-    model.load_state_dict(ckpt)
-    diffusion = Diffusion(img_size=64, device=device)
-    y = torch.Tensor([6] * n).long().to(device)
-    x = diffusion.sample(model, n, y, cfg_scale=3)
-    plot_images(x)
-```
-<hr>
-
-A more advanced version of this code can be found [here](https://github.com/tcapelle/Diffusion-Models-pytorch) by [@tcapelle](https://github.com/tcapelle). It introduces better logging, faster & more efficient training and other nice features and is also being followed by a nice [write-up](https://wandb.ai/capecape/train_sd/reports/Training-a-Conditional-Diffusion-model-from-scratch--VmlldzoyODMxNjE3).
