@@ -207,6 +207,8 @@ def launch():
     parser.add_argument('--image_size', type=int, required=False, default = None)
     parser.add_argument('--shuffle', type=bool, required=False, default = True)
     parser.add_argument('--resolution_ratio', type=int, required=False, default = 4)
+    parser.add_argument('--folder_prefix', type=str, required=False, default = "DDPM_downscale")
+
 
     args = parser.parse_args()
     args.proportion_train = 2.0
@@ -232,7 +234,7 @@ def launch():
         args.c_out = 1
         if args.image_size is None:
             args.image_size = 32
-    args.run_name = f"NewTransform_NewSampling_fixed_s-{args.dataset_size}_train-0.5/DDPM_downscale_{args.dataset_type}_ns-{args.noise_schedule}__bs-{args.batch_size}_e-{args.epochs}_lr-{args.lr}_cfg{args.cfg_proportion}_size{args.image_size}_resratio{args.resolution_ratio}"
+    args.run_name = f"{args.folder_prefix}_{args.dataset_type}_ns-{args.noise_schedule}__bs-{args.batch_size}_e-{args.epochs}_lr-{args.lr}_cfg{args.cfg_proportion}_size{args.image_size}_resratio{args.resolution_ratio}"
     args.interp_mode = 'bicubic'
     args.noise_steps = 750
     args.device = "cuda"

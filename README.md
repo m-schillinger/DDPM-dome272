@@ -23,6 +23,7 @@ This is a simple implementation of diffusion models for downscaling climate data
 - image_size: size of the HR image; default 64; can be set to smaller values to enable faster training
 - shuffle: defines the shuffle argument in pytorch's dataloader; True or False; default True
 - resolution_ratio: ratio of resolution HR image / LR image; default 4
+- folder_prefix: prefix of folder name in which results should be saved
 
 ## Repeat experiments on wind data
 ### Training

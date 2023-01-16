@@ -74,22 +74,21 @@ class DownscalingTemperatureDataset(Dataset):
     def __init__(self, hr_dir, lr_dir,
                  transform_hr=None, transform_lr=None,
                  max_len = 1e6, downsample_factor = 1):
-         '''init function.
-         Parameters:
-             hr_dir: Directory for HR images
-             lr_dir: Directory for HR images
-             transform_hr: Pytorch transformation of HR images
-             transform_lr: Pytorch transformation of LR images
-             ax_len: Maximal size of dataset (if not full folder considered)
-             downsample_factor: factor with with LR should be additionally downsampled
-         '''
+        '''init function.
+        Parameters:
+         hr_dir: Directory for HR images
+         lr_dir: Directory for HR images
+         transform_hr: Pytorch transformation of HR images
+         transform_lr: Pytorch transformation of LR images
+         ax_len: Maximal size of dataset (if not full folder considered)
+         downsample_factor: factor with with LR should be additionally downsampled
+        '''
         self.hr_dir = hr_dir
         self.lr_dir = lr_dir
         self.transform_hr = transform_hr
         self.transform_lr = transform_lr
         self.max_len = max_len
         self.downsample_factor = downsample_factor
-
 
     def __len__(self):
         return np.min([len(os.listdir(self.hr_dir)), self.max_len])

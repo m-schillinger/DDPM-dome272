@@ -104,14 +104,14 @@ class UNet_downscale(nn.Module):
     '''Class for the UNet for downscaling application'''
     def __init__(self, c_in=6, c_out=3, time_dim=256,
     interp_mode = 'bicubic', img_size = 64, device="cuda"):
-    '''init function.
-    Parameters:
-        c_in: Number of input channels (default 6, as 3 for HR and 3 for LR, see below)
-        c_out: Number of output channels
-        time_dim: Dimension of time embedding
-        interp_mode: interpolation mode to upsample the LR image (see below)
-        device: Pytorch device
-    '''
+        '''init function.
+        Parameters:
+            c_in: Number of input channels (default 6, as 3 for HR and 3 for LR, see below)
+            c_out: Number of output channels
+            time_dim: Dimension of time embedding
+            interp_mode: interpolation mode to upsample the LR image (see below)
+            device: Pytorch device
+        '''
         super().__init__()
         self.device = device
         self.time_dim = time_dim
